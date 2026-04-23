@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PayerPortal — Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0e1117;
+        --surface: #181d27;
+        --surface2: #1e2535;
+        --border: #2a3040;
+        --accent: #4f7cff;
+        --accent2: #38bdf8;
+        --text: #e8ecf4;
+        --muted: #8892a4;
+        --error: #f87171;
+        --success: #34d399;
+        --warning: #fbbf24;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        min-height: 100vh;
+      }
+      nav {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 32px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .nb {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .ni {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+      .nt {
+        font-family: "DM Serif Display", serif;
+        font-size: 20px;
+        background: linear-gradient(135deg, #fff 30%, var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .nr {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .nu {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .nu strong {
+        color: var(--text);
+      }
+      .tabs {
+        display: flex;
+        gap: 4px;
+        background: var(--bg);
+        border-radius: 10px;
+        padding: 4px;
+      }
+      .tb {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tb.active {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(79, 124, 255, 0.35);
+      }
+      .btn-sm {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        font-family: "DM Sans", sans-serif;
+        transition: all 0.2s;
+      }
+      .bg {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      .bg:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 36px 24px;
+      }
+      .ph {
+        margin-bottom: 28px;
+      }
+      .ph h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .ph p {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px;
+      }
+      .st {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+        margin-bottom: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .cs2 {
+        grid-column: span 2;
+      }
+      .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .req {
+        color: var(--error);
+        margin-left: 2px;
+      }
+      input,
+      select {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 10px 13px;
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+      }
+      input.ef {
+        border-color: var(--error);
+      }
+      select option {
+        background: var(--surface);
+      }
+      .fe {
+        font-size: 12px;
+        color: var(--error);
+        display: none;
+      }
+      .fe.show {
+        display: block;
+      }
+      .dv {
+        height: 1px;
+        background: var(--border);
+        margin: 24px 0;
+      }
+      .il {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .mi {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        position: relative;
+      }
+      .ig {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+      }
+      .ri {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        color: var(--error);
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: end;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+      .ri:hover {
+        background: rgba(248, 113, 113, 0.2);
+      }
+      .bai {
+        background: rgba(79, 124, 255, 0.1);
+        border: 1px dashed var(--accent);
+        color: var(--accent);
+        padding: 10px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        width: 100%;
+      }
+      .bai:hover {
+        background: rgba(79, 124, 255, 0.18);
+      }
+      .itotal {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+        text-align: right;
+      }
+      .bs {
+        padding: 13px 32px;
+        background: linear-gradient(135deg, var(--accent), #6b8fff);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .bs:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(79, 124, 255, 0.4);
+      }
+      .bs:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .alert {
+        position: fixed;
+        top: 76px;
+        right: 24px;
+        width: min(460px, calc(100vw - 48px));
+        padding: 13px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        z-index: 1000;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition:
+          opacity 0.18s ease,
+          transform 0.18s ease;
+      }
+      .alert.error {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        color: var(--error);
+      }
+      .alert.success {
+        background: rgba(52, 211, 153, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        color: var(--success);
+      }
+      .alert.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .spin {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #orders-section {
+        display: none;
+      }
+      .tw {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th {
+        background: var(--bg);
+        padding: 11px 14px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .bdg {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .bdg.placed {
+        background: rgba(79, 124, 255, 0.15);
+        color: var(--accent);
+      }
+      .bdg.processing {
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--warning);
+      }
+      .bdg.shipped {
+        background: rgba(56, 189, 248, 0.15);
+        color: var(--accent2);
+      }
+      .bdg.delivered {
+        background: rgba(52, 211, 153, 0.15);
+        color: var(--success);
+      }
+      .bdg.cancelled {
+        background: rgba(248, 113, 113, 0.15);
+        color: var(--error);
+      }
+      .ip {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .te {
+        background: none;
+        border: 1px dashed var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        padding: 3px 8px;
+        cursor: pointer;
+        font-family: "DM Sans", sans-serif;
+        transition: all 0.2s;
+      }
+      .te:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .es {
+        text-align: center;
+        padding: 60px;
+        color: var(--muted);
+      }
+      .es .ic {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+      @media (max-width: 700px) {
+        .g2 {
+          grid-template-columns: 1fr;
+        }
+        .cs2 {
+          grid-column: span 1;
+        }
+        .ig {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+	  </head>
+	  <body>
+	    <nav>
+      <div class="nb">
+        <div class="ni">📦</div>
+        <span class="nt">PayerPortal</span>
+      </div>
+      <div class="nr">
+        <div class="tabs">
+          <button class="tb active" onclick="showTab('form', this)">
+            New Order
+          </button>
+          <button
+            class="tb"
+            onclick="
+              showTab('orders', this);
+              loadOrders();
+            "
+          >
+            My Orders
+          </button>
+        </div>
+        <span class="nu">Agent: <strong id="agn">—</strong></span>
+	        <button class="btn-sm bg" onclick="logout()">Sign Out</button>
+	      </div>
+	    </nav>
+	    <div class="alert" id="fa"></div>
+	    <main>
+	      <div id="form-section">
+        <div class="ph">
+          <h1>Submit New Order</h1>
+          <p>
+            Fill all required fields. Confirmation email is sent automatically
+            on submit.
+          </p>
+        </div>
+        <div class="card">
+          <p class="st">Customer Details</p>
+          <div class="g2">
+            <div class="fg">
+              <label>First Name <span class="req">*</span></label
+              ><input id="first_name" placeholder="John" /><span
+                class="fe"
+                id="e-first_name"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>Last Name <span class="req">*</span></label
+              ><input id="last_name" placeholder="Doe" /><span
+                class="fe"
+                id="e-last_name"
+              ></span>
+            </div>
+            <div class="fg cs2">
+              <label>Street Address <span class="req">*</span></label
+              ><input id="street_address" placeholder="123 MG Road" /><span
+                class="fe"
+                id="e-street_address"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>City <span class="req">*</span></label
+              ><input id="city" placeholder="Mumbai" /><span
+                class="fe"
+                id="e-city"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>State <span class="req">*</span></label
+              ><input id="state" placeholder="Maharashtra" /><span
+                class="fe"
+                id="e-state"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>Pincode <span class="req">*</span></label
+              ><input id="pincode" placeholder="400001" /><span
+                class="fe"
+                id="e-pincode"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>Country <span class="req">*</span></label
+              ><input id="country" value="India" /><span
+                class="fe"
+                id="e-country"
+              ></span>
+            </div>
+            <div class="fg">
+              <label>Phone <span class="req">*</span></label
+              ><input
+                id="phone"
+                type="tel"
+                placeholder="+91 98765 43210"
+              /><span class="fe" id="e-phone"></span>
+            </div>
+            <div class="fg">
+              <label>Email <span class="req">*</span></label
+              ><input
+                id="email"
+                type="email"
+                placeholder="customer@example.com"
+              /><span class="fe" id="e-email"></span>
+            </div>
+          </div>
+
+          <div class="dv"></div>
+          <p class="st">
+            Medicine Items
+            <span
+              style="
+                color: var(--accent);
+                font-size: 11px;
+                text-transform: none;
+                letter-spacing: 0;
+                font-weight: 400;
+              "
+              >(add one or more)</span
+            >
+          </p>
+          <div class="il" id="il"></div>
+          <button class="bai" onclick="addItem()">+ Add Medicine</button>
+          <span
+            class="fe"
+            id="e-items"
+            style="display: block; margin-top: 6px"
+          ></span>
+
+          <div class="dv"></div>
+          <div class="g2">
+            <div class="fg">
+              <label>Lead Source <span class="req">*</span></label>
+              <select id="lead_source" onchange="onSourceChange()">
+                <option value="">— Select Source —</option>
+                <option value="Truemed">Truemed</option>
+                <option value="Macland">Macland</option>
+                <option value="Syncore">Syncore</option>
+                <option value="Tradewave">Tradewave</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="fe" id="e-lead_source"></span>
+              <span
+                id="ehint"
+                style="font-size: 12px; color: var(--accent); display: none"
+                >📧 Email will be sent from this source's inbox</span
+              >
+            </div>
+            <div class="fg">
+              <label
+                >Tracking ID
+                <span style="color: var(--muted); font-weight: 400"
+                  >(optional)</span
+                ></label
+              ><input id="tracking_id" placeholder="Can add later" />
+            </div>
+            <div class="fg cs2">
+              <label
+                >Notes
+                <span style="color: var(--muted); font-weight: 400"
+                  >(optional)</span
+                ></label
+              ><input id="notes" placeholder="Any notes…" />
+            </div>
+          </div>
+
+          <div class="dv"></div>
+          <div style="display: flex; gap: 12px; align-items: center">
+            <button class="bs" id="sbtn" onclick="submitOrder()">
+              Submit Order
+            </button>
+            <button class="btn-sm bg" onclick="reset()">Clear</button>
+          </div>
+	        </div>
+	      </div>
+
+      <div id="orders-section">
+        <div class="ph">
+          <h1>My Orders</h1>
+          <p>All orders you have submitted.</p>
+        </div>
+        <div class="card">
+          <div id="oc">
+            <div class="es">
+              <div class="ic">⏳</div>
+              <p>Loading…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      const API = window.location.origin + "/api";
+      const token = localStorage.getItem("pp_token");
+      const user = JSON.parse(localStorage.getItem("pp_user") || "null");
+      if (!token || !user || user.role !== "agent") {
+        window.location.href = "index.html";
+      }
+      document.getElementById("agn").textContent = user.name;
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = "index.html";
+      }
+      function showTab(t, btn) {
+        document
+          .querySelectorAll(".tb")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("form-section").style.display =
+          t === "form" ? "block" : "none";
+        document.getElementById("orders-section").style.display =
+          t === "orders" ? "block" : "none";
+      }
+      function onSourceChange() {
+        const v = document.getElementById("lead_source").value;
+        document.getElementById("ehint").style.display = v ? "block" : "none";
+      }
+
+      let ic = 0;
+      function addItem(d = {}) {
+        ic++;
+        const n = ic;
+        const div = document.createElement("div");
+        div.className = "mi";
+        div.id = "mi" + n;
+        div.innerHTML = `<div class="ig">
+    <div class="fg"><label>Product Name<span class="req">*</span></label><input class="ip" placeholder="e.g. Omega-3 Capsules" value="${d.product_name || ""}"/></div>
+    <div class="fg"><label>Qty<span class="req">*</span></label><input class="iq" type="number" placeholder="1" min="1" value="${d.quantity || ""}"/></div>
+    <div class="fg"><label>MG<span class="req">*</span></label><input class="im" placeholder="500mg" value="${d.mg || ""}"/></div>
+    <div class="fg"><label>Cost ₹<span class="req">*</span></label><input class="ic" type="number" placeholder="0.00" min="0" step="0.01" value="${d.cost || ""}" oninput="updateTotal(${n})"/></div>
+    <button class="ri" onclick="removeItem(${n})" title="Remove">×</button>
+  </div><div class="itotal" id="it${n}"></div>`;
+        document.getElementById("il").appendChild(div);
+      }
+      function removeItem(n) {
+        const el = document.getElementById("mi" + n);
+        if (el) el.remove();
+        if (!document.querySelectorAll(".mi").length) addItem();
+      }
+      function updateTotal(n) {
+        const el = document.getElementById("mi" + n);
+        if (!el) return;
+        const c = parseFloat(el.querySelector(".ic").value) || 0;
+        const t = document.getElementById("it" + n);
+        t.textContent = 
+          c > 0 ? `Line total: ₹${c.toFixed(2)}` : "";
+      }
+      function getItems() {
+        return Array.from(document.querySelectorAll(".mi")).map((el) => ({
+          product_name: el.querySelector(".ip").value.trim(),
+          quantity: parseInt(el.querySelector(".iq").value) || 0,
+          mg: el.querySelector(".im").value.trim(),
+          cost: parseFloat(el.querySelector(".ic").value) || 0,
+        }));
+      }
+
+      function showAlert(msg, type) {
+        const el = document.getElementById("fa");
+        el.innerHTML = msg;
+        const t = type === "success" || type === "error" ? type : "success";
+        el.classList.remove("success", "error");
+        el.classList.add("alert", t, "show");
+        clearTimeout(window.__ppAlertTimer);
+        window.__ppAlertTimer = setTimeout(() => {
+          el.classList.remove("show");
+        }, 4500);
+      }
+      function clearErrs() {
+        document.querySelectorAll(".fe").forEach((e) => {
+          e.classList.remove("show");
+          e.textContent = "";
+        });
+        document
+          .querySelectorAll(".ef")
+          .forEach((e) => e.classList.remove("ef"));
+      }
+      function fErr(id, msg) {
+        const el = document.getElementById("e-" + id);
+        if (el) {
+          el.textContent = msg;
+          el.classList.add("show");
+        }
+        const inp = document.getElementById(id);
+        if (inp) inp.classList.add("ef");
+      }
+      function reset() {
+        [
+          "first_name",
+          "last_name",
+          "street_address",
+          "city",
+          "state",
+          "pincode",
+          "country",
+          "phone",
+          "email",
+          "tracking_id",
+          "notes",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = id === "country" ? "India" : "";
+        });
+        document.getElementById("lead_source").value = "";
+        document.getElementById("il").innerHTML = "";
+        ic = 0;
+	        addItem();
+	        clearErrs();
+	        document.getElementById("ehint").style.display = "none";
+	      }
+
+      async function submitOrder() {
+        clearErrs();
+        document.getElementById("fa").classList.remove("show");
+        const f = {
+          first_name: document.getElementById("first_name").value.trim(),
+          last_name: document.getElementById("last_name").value.trim(),
+          street_address: document
+            .getElementById("street_address")
+            .value.trim(),
+          city: document.getElementById("city").value.trim(),
+          state: document.getElementById("state").value.trim(),
+          pincode: document.getElementById("pincode").value.trim(),
+          country: document.getElementById("country").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          email: document.getElementById("email").value.trim(),
+          lead_source: document.getElementById("lead_source").value,
+          tracking_id: document.getElementById("tracking_id").value.trim(),
+          notes: document.getElementById("notes").value.trim(),
+          items: getItems(),
+        };
+
+        let err = false;
+        [
+          "first_name",
+          "last_name",
+          "street_address",
+          "city",
+          "state",
+          "pincode",
+          "country",
+          "phone",
+          "lead_source",
+        ].forEach((k) => {
+          if (!f[k]) {
+            fErr(k, "Required");
+            err = true;
+          }
+        });
+        if (!f.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
+          fErr("email", "Valid email required");
+          err = true;
+        }
+        const itemErr =
+          f.items.length === 0 ||
+          f.items.some(
+            (i) =>
+              !i.product_name ||
+              !i.mg ||
+              i.quantity < 1 ||
+              isNaN(i.cost) ||
+              i.cost < 0,
+          );
+        if (itemErr) {
+          const el = document.getElementById("e-items");
+          el.textContent = "Fill all medicine fields for each item";
+          el.classList.add("show");
+          err = true;
+        }
+        if (err) return;
+
+        const btn = document.getElementById("sbtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spin"></span>Submitting…';
+        try {
+          const res = await fetch(`${API}/orders`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(f),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            if (data.errors)
+              data.errors.forEach((e) => fErr(e.path || "items", e.msg));
+            throw new Error(data.error || "Failed");
+          }
+          showAlert(
+            `✅ Order <strong>${data.order.order_id}</strong> submitted with ${f.items.length} item(s). Confirmation email queued.`,
+            'success',
+          );
+          reset();
+        } catch (e) {
+          showAlert("❌ " + e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "Submit Order";
+        }
+      }
+
+      async function loadOrders() {
+        const oc = document.getElementById("oc");
+        oc.innerHTML =
+          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
+        try {
+          const res = await fetch(`${API}/orders/mine`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          if (!data.orders.length) {
+            oc.innerHTML =
+              '<div class="es"><div class="ic">📋</div><p>No orders yet.</p></div>';
+            return;
+          }
+
+          const parseItems = (items) => {
+            if (Array.isArray(items)) return items;
+            if (typeof items === "string") {
+              try {
+                const parsed = JSON.parse(items);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            }
+            return [];
+          };
+
+          const groupOrdersById = (orders) => {
+            const byId = new Map();
+            for (const o of orders || []) {
+              const key = o && o.order_id;
+              if (!key) continue;
+
+              const existingItems = parseItems(o.items);
+              const rowItems = existingItems.length
+                ? existingItems
+                : o.product_name
+                  ? [
+                      {
+                        product_name: o.product_name,
+                        quantity: o.quantity,
+                        mg: o.mg,
+                        cost: o.cost,
+                      },
+                    ]
+                  : [];
+
+              if (!byId.has(key)) {
+                byId.set(key, { ...o, items: [...rowItems] });
+                continue;
+              }
+
+              const ex = byId.get(key);
+              ex.items = [...(ex.items || []), ...rowItems];
+              if (!ex.tracking_id && o.tracking_id) ex.tracking_id = o.tracking_id;
+              if (!ex.notes && o.notes) ex.notes = o.notes;
+              if (!ex.order_status && o.order_status) ex.order_status = o.order_status;
+              if (!ex.order_date && o.order_date) ex.order_date = o.order_date;
+            }
+            return Array.from(byId.values());
+          };
+
+          const groupedOrders = groupOrdersById(data.orders);
+
+          const rows = groupedOrders
+            .map((o) => {
+              const items = (o.items || [])
+                .map(
+                  (i) =>
+                    `<div class="ip">• ${i.product_name} — ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</div>`,
+                )
+                .join("");
+              const total = (o.items || []).reduce(
+                (s, i) =>
+                  s +
+                  (parseFloat(i.cost || 0) || 0),
+                0,
+              );
+              return `<tr>
+        <td><strong style="font-size:12px">${o.order_id}</strong><br/><span style="font-size:11px;color:var(--muted)">${new Date(o.order_date).toLocaleDateString()}</span></td>
+        <td>${o.first_name} ${o.last_name}<br/><span style="font-size:11px;color:var(--muted)">${o.phone}</span></td>
+        <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: ₹${total.toFixed(2)}</div></td>
+        <td style="font-size:12px">${o.lead_source}</td>
+        <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
+        <td>${o.tracking_id ? `<code style="font-size:11px">${o.tracking_id}</code>` : `<button class="te" onclick="updTrack('${o.order_id}',this)">+ Add</button>`}</td>
+      </tr>`;
+            })
+            .join("");
+          oc.innerHTML = `<div style="font-size:13px;color:var(--muted);margin-bottom:14px"><strong style="color:var(--text)">${data.pagination.total}</strong> order(s)</div>
+      <div class="tw"><table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Source</th><th>Status</th><th>Tracking</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+        } catch (e) {
+          oc.innerHTML = `<div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div>`;
+        }
+      }
+
+      async function updTrack(oid, btn) {
+        const id = prompt("Enter Tracking ID:");
+        if (!id?.trim()) return;
+        try {
+          const res = await fetch(`${API}/orders/${oid}/tracking`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ tracking_id: id.trim() }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          btn.outerHTML = `<code style="font-size:11px">${id.trim()}</code>`;
+        } catch (e) {
+          alert("Error: " + e.message);
+        }
+      }
+      addItem();
+    </script>
+  </body>
+</html>

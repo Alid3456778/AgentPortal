@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PayerPortal — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0e1117;--surface:#181d27;--surface2:#1e2535;--border:#2a3040;--accent:#4f7cff;--accent2:#38bdf8;--accent3:#a78bfa;--text:#e8ecf4;--muted:#8892a4;--error:#f87171;--success:#34d399;--warning:#fbbf24}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+    nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+    .nb{display:flex;align-items:center;gap:10px}
+    .ni{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .nt{font-family:'DM Serif Display',serif;font-size:20px;background:linear-gradient(135deg,#fff 30%,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .abadge{background:rgba(167,139,250,.15);color:var(--accent3);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(167,139,250,.3)}
+    .nr{display:flex;align-items:center;gap:10px}
+    .nu{font-size:13px;color:var(--muted)}.nu strong{color:var(--text)}
+    .btn-sm{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .bg{background:transparent;border:1px solid var(--border);color:var(--muted)}.bg:hover{border-color:var(--accent);color:var(--accent)}
+    .bp{background:linear-gradient(135deg,var(--accent),#6b8fff);color:#fff}.bp:hover{box-shadow:0 4px 16px rgba(79,124,255,.4);transform:translateY(-1px)}
+    .be{background:linear-gradient(135deg,#34d399,#059669);color:#fff}.be:hover{box-shadow:0 4px 16px rgba(52,211,153,.35);transform:translateY(-1px)}
+    .bp:disabled,.be:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+    /* Layout with sidebar tabs */
+    .layout{display:flex;min-height:calc(100vh - 60px)}
+    .sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0}
+    .stab{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;width:100%;text-align:left;transition:all .2s;margin-bottom:2px}
+    .stab:hover{background:var(--surface2);color:var(--text)}
+    .stab.active{background:rgba(79,124,255,.15);color:var(--accent)}
+    .stab .sico{font-size:16px}
+    .content{flex:1;padding:28px;overflow-x:hidden}
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+    .sc{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+    .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+    .sc.blue::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .sc.green::before{background:linear-gradient(90deg,#34d399,#059669)}
+    .sc.yellow::before{background:linear-gradient(90deg,var(--warning),#f59e0b)}
+    .sc.purple::before{background:linear-gradient(90deg,var(--accent3),#7c3aed)}
+    .sl{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+    .sv{font-size:26px;font-weight:600;font-family:'DM Serif Display',serif}
+
+    /* Filters */
+    .fc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px}
+    .fr{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+    .fg{display:flex;flex-direction:column;gap:6px}
+    label{font-size:12px;font-weight:500;color:var(--muted)}
+    input,select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+    input:focus,select:focus{border-color:var(--accent)}
+    select option{background:var(--surface)}
+    .fi{width:155px}.fiw{width:200px}
+
+    /* Table card */
+    .tc{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .th2{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .tt{font-size:15px;font-weight:600}.tsub{font-size:13px;color:var(--muted)}
+    .tw{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:var(--bg);padding:10px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+    td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,.015)}
+    .bdg{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .bdg.placed{background:rgba(79,124,255,.15);color:var(--accent)}.bdg.processing{background:rgba(251,191,36,.15);color:var(--warning)}
+    .bdg.shipped{background:rgba(56,189,248,.15);color:var(--accent2)}.bdg.delivered{background:rgba(52,211,153,.15);color:var(--success)}
+    .bdg.cancelled{background:rgba(248,113,113,.15);color:var(--error)}
+    .src-bdg{font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(79,124,255,.08);color:var(--muted);border:1px solid var(--border)}
+    .be2{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .be2:hover{border-color:var(--accent);color:var(--accent)}
+    .be2.danger{border-color:rgba(248,113,113,.3);color:var(--error)}
+    .ip{font-size:11px;color:var(--muted);line-height:1.7}
+    .pg{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+    .pbs{display:flex;gap:6px}
+    .pb{background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--muted);padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .2s}
+    .pb:hover,.pb.active{border-color:var(--accent);color:var(--accent)}
+    .pb:disabled{opacity:.4;cursor:not-allowed}
+    .es{text-align:center;padding:60px;color:var(--muted)}.es .ico{font-size:48px;margin-bottom:12px}
+    .spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+    .overlay.show{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:560px;max-width:100%;max-height:90vh;overflow-y:auto}
+    .modal h2{font-size:18px;font-weight:600;margin-bottom:4px}
+    .modal .msub{font-size:13px;color:var(--muted);margin-bottom:22px}
+    .mg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .mfg{display:flex;flex-direction:column;gap:7px}
+    .mfg label{font-size:13px;font-weight:500;color:var(--muted)}
+    .mfg.full{grid-column:span 2}
+    .ma{display:flex;gap:10px;margin-top:22px}
+    .dv{height:1px;background:var(--border);margin:18px 0}
+    .mst{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:14px}
+
+    /* Items editor in modal */
+    .mi-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+    .mi-row{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px}
+    .mi-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 36px;gap:10px;align-items:end}
+    .ri{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--error);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+    .ri:hover{background:rgba(248,113,113,.2)}
+    .bai{background:rgba(79,124,255,.1);border:1px dashed var(--accent);color:var(--accent);padding:9px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .2s;width:100%}
+    .bai:hover{background:rgba(79,124,255,.18)}
+    .alert{padding:12px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+    .alert.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--error)}
+    .alert.success{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--success)}
+    .alert.show{display:block}
+
+    /* Customer detail panel */
+    .cust-panel{background:var(--surface2);border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:16px}
+    .cust-header{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+    .cust-avatar{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
+    .ag-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+    .ag-status.active{background:var(--success)}.ag-status.inactive{background:var(--error)}
+
+    @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.layout{flex-direction:column}.sidebar{width:100%;display:flex;overflow-x:auto;padding:12px;gap:4px}.stab{white-space:nowrap}}
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nb"><div class="ni">📦</div><span class="nt">PayerPortal</span><span class="abadge">Admin</span></div>
+  <div class="nr">
+    <span class="nu">Signed in as <strong id="adn">—</strong></span>
+    <button class="btn-sm bg" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="sidebar">
+    <button class="stab active" onclick="showPage('orders',this)"><span class="sico">📋</span>Orders</button>
+    <button class="stab" onclick="showPage('customers',this)"><span class="sico">👥</span>Customers</button>
+    <button class="stab" onclick="showPage('agents',this)"><span class="sico">🧑‍💼</span>Agents</button>
+  </div>
+  <div class="content" id="content-area">
+    <!-- Orders Page -->
+    <div id="pg-orders">
+      <div class="stats-grid">
+        <div class="sc blue"><div class="sl">Total Orders</div><div class="sv" id="s-orders">—</div></div>
+        <div class="sc green"><div class="sl">Revenue</div><div class="sv" id="s-rev">—</div></div>
+        <div class="sc yellow"><div class="sl">Customers</div><div class="sv" id="s-cust">—</div></div>
+        <div class="sc purple"><div class="sl">Delivered</div><div class="sv" id="s-del">—</div></div>
+      </div>
+      <div class="fc">
+        <div class="fr">
+          <div class="fg"><label>Agent Name</label><input id="f-agent" class="fi" placeholder="Search agent…"/></div>
+          <div class="fg"><label>Date From</label><input type="date" id="f-from" class="fi"/></div>
+          <div class="fg"><label>Date To</label><input type="date" id="f-to" class="fi"/></div>
+          <div class="fg"><label>Lead Source</label>
+            <select id="f-src" class="fi">
+              <option value="">All</option>
+              <option value="Truemed">Truemed</option>
+              <option value="Macland">Macland</option>
+              <option value="Syncore">Syncore</option>
+              <option value="Tradewave">Tradewave</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="fg"><label>Status</label>
+            <select id="f-status" class="fi">
+              <option value="">All</option>
+              <option value="placed">Placed</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="fg"><label>Phone</label><input id="f-phone" class="fi" placeholder="Search phone…"/></div>
+          <div class="fg" style="flex-direction:row;align-items:flex-end;gap:8px">
+            <button class="btn-sm bp" onclick="loadOrders(1)">Apply</button>
+            <button class="btn-sm bg" onclick="clearFilters()">Reset</button>
+          </div>
+          <div class="fg" style="align-items:flex-end;margin-left:auto">
+            <button class="btn-sm be" id="expbtn" onclick="exportOrders()">⬇ Export Excel</button>
+          </div>
+        </div>
+      </div>
+      <div class="tc">
+        <div class="th2">
+          <div><div class="tt">All Orders</div><div class="tsub" id="o-count">Loading…</div></div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>Order ID</th><th>Date</th><th>Agent</th><th>Source</th>
+            <th>Customer</th><th>Items</th><th>Total</th><th>Tracking</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="otbody"><tr><td colspan="10"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr></tbody>
+        </table></div>
+        <div class="pg"><div id="pi">—</div><div class="pbs" id="pbs"></div></div>
+      </div>
+    </div>
+
+    <!-- Customers Page -->
+    <div id="pg-customers" style="display:none">
+      <div class="tc">
+        <div class="th2">
+          <div><div class="tt">All Customers</div><div class="tsub" id="c-count">Loading…</div></div>
+          <input type="text" placeholder="Search by name, phone or email…" id="c-search" style="width:260px" oninput="searchCustomers(this.value)"/>
+        </div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>Phone (ID)</th><th>Name</th><th>Email</th><th>Location</th>
+            <th>Orders</th><th>Total Spent</th><th>Last Order</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="ctbody"><tr><td colspan="8"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr></tbody>
+        </table></div>
+        <div class="pg"><div id="cpi">—</div><div class="pbs" id="cpbs"></div></div>
+      </div>
+    </div>
+
+    <!-- Agents Page -->
+    <div id="pg-agents" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn-sm bp" onclick="openAddAgent()">+ Add Agent</button>
+      </div>
+      <div class="tc">
+        <div class="th2"><div class="tt">All Agents</div></div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>Agent ID</th><th>Name</th><th>Email</th><th>Phone</th>
+            <th>Status</th><th>Orders</th><th>Joined</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="atbody"><tr><td colspan="8"><div class="es"><div class="ico">⏳</div></td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER EDIT MODAL -->
+<div class="overlay" id="order-modal">
+  <div class="modal">
+    <h2>Edit Order</h2>
+    <div class="msub" id="om-sub">Order ID: —</div>
+
+    <p class="mst">Order Info</p>
+    <div class="mg2">
+      <div class="mfg"><label>Status</label>
+        <select id="om-status">
+          <option value="placed">Placed</option><option value="processing">Processing</option>
+          <option value="shipped">Shipped</option><option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="mfg"><label>Lead Source</label>
+        <select id="om-source">
+          <option value="Truemed">Truemed</option><option value="Macland">Macland</option>
+          <option value="Syncore">Syncore</option>
+          <option value="Tradewave">Tradewave</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="mfg"><label>Tracking ID</label><input id="om-tracking" placeholder="Optional"/></div>
+      <div class="mfg"><label>Notes</label><input id="om-notes" placeholder="Optional"/></div>
+    </div>
+
+    <div class="dv"></div>
+    <p class="mst">Customer Info</p>
+    <div class="mg2">
+      <div class="mfg"><label>First Name</label><input id="om-fname"/></div>
+      <div class="mfg"><label>Last Name</label><input id="om-lname"/></div>
+      <div class="mfg"><label>Phone</label><input required id="om-phone"/></div>
+      <div class="mfg"><label>Email</label><input id="om-email"/></div>
+      <div class="mfg full"><label>Street Address</label><input id="om-addr"/></div>
+      <div class="mfg"><label>City</label><input id="om-city"/></div>
+      <div class="mfg"><label>State</label><input id="om-state"/></div>
+      <div class="mfg"><label>Pincode</label><input id="om-pincode"/></div>
+      <div class="mfg"><label>Country</label><input id="om-country"/></div>
+    </div>
+
+    <div class="dv"></div>
+    <p class="mst">Medicine Items</p>
+    <div class="mi-list" id="om-items"></div>
+    <button class="bai" onclick="omAddItem()">+ Add Item</button>
+
+    <div class="alert" id="om-alert"></div>
+    <div class="ma">
+      <button class="btn-sm bp" onclick="saveOrder()">Save Changes</button>
+      <button class="btn-sm bg" onclick="closeModal('order-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGENT ADD/EDIT MODAL -->
+<div class="overlay" id="agent-modal">
+  <div class="modal">
+    <h2 id="am-title">Add Agent</h2>
+    <div class="msub" id="am-sub">Fill all required fields</div>
+    <div class="mg2">
+      <div class="mfg"><label>Agent ID *</label><input id="am-id" placeholder="e.g. AGT004"/></div>
+      <div class="mfg"><label>Full Name *</label><input id="am-name" placeholder="Jane Doe"/></div>
+      <div class="mfg"><label>Password *</label><input id="am-pass" type="password" placeholder="Min 6 chars"/></div>
+      <div class="mfg"><label>Email</label><input id="am-email" type="email" placeholder="agent@example.com"/></div>
+      <div class="mfg"><label>Phone</label><input id="am-phone" placeholder="+91 …"/></div>
+      <div class="mfg"><label>Status</label>
+        <select id="am-active"><option value="true">Active</option><option value="false">Inactive</option></select>
+      </div>
+    </div>
+    <div class="alert" id="am-alert"></div>
+    <div class="ma">
+      <button class="btn-sm bp" id="am-save" onclick="saveAgent()">Save Agent</button>
+      <button class="btn-sm bg" onclick="closeModal('agent-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER DETAIL MODAL -->
+<div class="overlay" id="cust-modal">
+  <div class="modal" style="width:680px">
+    <h2>Customer Profile</h2>
+    <div class="msub" id="cm-sub">—</div>
+    <div id="cm-body"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></div>
+    <div class="ma"><button class="btn-sm bg" onclick="closeModal('cust-modal')">Close</button></div>
+  </div>
+</div>
+
+<script>
+const API=window.location.origin+'/api';
+const token=localStorage.getItem('pp_token');
+const user=JSON.parse(localStorage.getItem('pp_user')||'null');
+if(!token||!user||user.role!=='admin'){window.location.href='index.html';}
+document.getElementById('adn').textContent=user.name;
+
+function logout(){localStorage.clear();window.location.href='index.html';}
+
+function parseItems(items){
+  if(Array.isArray(items)) return items;
+  if(typeof items==='string'){
+    try{
+      const parsed=JSON.parse(items);
+      return Array.isArray(parsed)?parsed:[];
+    }catch(e){ return []; }
+  }
+  return [];
+}
+
+function groupOrdersById(orders){
+  const byId=new Map();
+  for(const o of orders||[]){
+    const key=o&&o.order_id;
+    if(!key) continue;
+
+    const existingItems=parseItems(o.items);
+    const rowItems=existingItems.length?existingItems:(o.product_name?[{product_name:o.product_name,quantity:o.quantity,mg:o.mg,cost:o.cost}]:[]);
+
+    if(!byId.has(key)){
+      byId.set(key,{...o,items:[...rowItems]});
+      continue;
+    }
+
+    const ex=byId.get(key);
+    ex.items=[...(ex.items||[]),...rowItems];
+    if(!ex.tracking_id && o.tracking_id) ex.tracking_id=o.tracking_id;
+    if(!ex.notes && o.notes) ex.notes=o.notes;
+    if(!ex.order_status && o.order_status) ex.order_status=o.order_status;
+    if(!ex.order_date && o.order_date) ex.order_date=o.order_date;
+  }
+  return Array.from(byId.values());
+}
+
+function calcOrderTotal(items){
+  return (items||[]).reduce((s,i)=>{
+    const unit=parseFloat(i&&i.cost)||0;
+    const qty=parseInt(i&&i.quantity)||0;
+    return s + (unit);
+  },0);
+}
+
+// ── Page switching ─────────────────────────────────────────────────────────
+function showPage(name, btn){
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  ['orders','customers','agents'].forEach(p=>{
+    document.getElementById('pg-'+p).style.display=p===name?'block':'none';
+  });
+  if(name==='orders')   loadOrders(1);
+  if(name==='customers')loadCustomers(1);
+  if(name==='agents')   loadAgents();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const r=await fetch(`${API}/admin/stats`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    document.getElementById('s-orders').textContent=d.total_orders?.toLocaleString()||'0';
+    document.getElementById('s-rev').textContent='₹'+(d.total_revenue||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+    document.getElementById('s-cust').textContent=d.total_customers?.toLocaleString()||'0';
+    const del=d.status_breakdown?.find(s=>s.order_status==='delivered');
+    document.getElementById('s-del').textContent=del?del.count:'0';
+  }catch(e){}
+}
+
+// ── Orders ─────────────────────────────────────────────────────────────────
+let curPage=1,totPages=1,editingOrder=null;
+
+function getFilters(extra={}){
+  const p={
+    agent_name:document.getElementById('f-agent')?.value.trim()||'',
+    date_from:document.getElementById('f-from')?.value||'',
+    date_to:document.getElementById('f-to')?.value||'',
+    lead_source:document.getElementById('f-src')?.value||'',
+    order_status:document.getElementById('f-status')?.value||'',
+    search_phone:document.getElementById('f-phone')?.value.trim()||'',
+    ...extra,
+  };
+  return Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+}
+
+async function loadOrders(page=1){
+  curPage=page;
+  const tbody=document.getElementById('otbody');
+  tbody.innerHTML='<tr><td colspan="10"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr>';
+  try{
+    const qs=getFilters({page,limit:50});
+    const r=await fetch(`${API}/admin/orders?${qs}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    totPages=d.pagination.pages||1;
+    document.getElementById('o-count').textContent=`${d.pagination.total} orders (page ${d.pagination.page}/${totPages||1})`;
+    const groupedOrders=groupOrdersById(d.orders);
+    document.getElementById('pi').textContent=`Showing ${groupedOrders.length} of ${d.pagination.total}`;
+    d.orders=groupedOrders;
+    renderPagination('pbs',d.pagination,loadOrders);
+
+    if(!d.orders.length){tbody.innerHTML='<tr><td colspan="10"><div class="es"><div class="ico">🔍</div><p>No orders found.</p></div></td></tr>';return;}
+
+    tbody.innerHTML=d.orders.map(o=>{
+      const items=parseItems(o.items);
+      const itemHtml=items.map(i=>`<div class="ip">• ${i.product_name} ${i.quantity}×${i.mg}</div>`).join('');
+      const total=calcOrderTotal(items);
+      return `<tr>
+        <td><strong style="font-size:12px">${o.order_id}</strong></td>
+        <td style="white-space:nowrap">${new Date(o.order_date).toLocaleDateString()}</td>
+        <td><div style="font-weight:500">${o.agent_name}</div><div style="font-size:11px;color:var(--muted)">${o.agent_id}</div></td>
+        <td><span class="src-bdg">${o.lead_source}</span></td>
+        <td><div>${o.first_name} ${o.last_name}</div><div style="font-size:11px;color:var(--muted)">${o.phone}</div></td>
+        <td style="max-width:180px">${itemHtml||'<span style="color:var(--muted)">—</span>'}</td>
+        <td>₹${total.toFixed(2)}</td>
+        <td style="font-size:12px">${o.tracking_id||'<span style="color:var(--muted)">—</span>'}</td>
+        <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
+        <td><button class="be2" onclick="openOrderEdit('${o.order_id}')">Edit</button></td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="10"><div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div></td></tr>`;
+  }
+}
+
+function clearFilters(){
+  ['f-agent','f-from','f-to','f-src','f-status','f-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  loadOrders(1);
+}
+
+async function exportOrders(){
+  const btn=document.getElementById('expbtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>Exporting…';
+  try{
+    const qs=getFilters();
+    const r=await fetch(`${API}/admin/orders/export?${qs}`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok){const d=await r.json();throw new Error(d.error);}
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download=`PayerPortal_Orders_${new Date().toISOString().split('T')[0]}.xlsx`;a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){alert('Export error: '+e.message);}
+  finally{btn.disabled=false;btn.innerHTML='⬇ Export Excel';}
+}
+
+// ── Order Edit Modal ───────────────────────────────────────────────────────
+let omItemCount=0;
+
+async function openOrderEdit(orderId){
+  editingOrder=orderId;
+  document.getElementById('om-sub').textContent='Order: '+orderId;
+  document.getElementById('om-items').innerHTML='';omItemCount=0;
+  openModal('order-modal');
+  try{
+    const r=await fetch(`${API}/admin/orders/${orderId}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    const o=d.order;
+    document.getElementById('om-status').value   = o.order_status||'placed';
+    document.getElementById('om-source').value   = o.lead_source||'';
+    document.getElementById('om-tracking').value = o.tracking_id||'';
+    document.getElementById('om-notes').value    = o.notes||'';
+    document.getElementById('om-fname').value    = o.first_name||'';
+    document.getElementById('om-lname').value    = o.last_name||'';
+    document.getElementById('om-phone').value    = o.phone||'';
+    document.getElementById('om-email').value    = o.email||'';
+    document.getElementById('om-addr').value     = o.street_address||'';
+    document.getElementById('om-city').value     = o.city||'';
+    document.getElementById('om-state').value    = o.state||'';
+    document.getElementById('om-pincode').value  = o.pincode||'';
+    document.getElementById('om-country').value  = o.country||'';
+    (o.items||[]).forEach(i=>omAddItem(i));
+    if(!(o.items||[]).length) omAddItem();
+  }catch(e){document.getElementById('om-alert').textContent='Failed to load order: '+e.message;document.getElementById('om-alert').className='alert error show';}
+}
+
+function omAddItem(d={}){
+  omItemCount++;const n=omItemCount;
+  const div=document.createElement('div');div.className='mi-row';div.id='omr'+n;
+  div.innerHTML=`<div class="mi-grid">
+    <div class="fg"><label>Product</label><input class="omp" value="${d.product_name||''}" placeholder="Product name"/></div>
+    <div class="fg"><label>Qty</label><input class="omq" type="number" min="1" value="${d.quantity||''}" placeholder="1"/></div>
+    <div class="fg"><label>MG</label><input class="omm" value="${d.mg||''}" placeholder="500mg"/></div>
+    <div class="fg"><label>Cost ₹</label><input class="omc" type="number" min="0" step="0.01" value="${d.cost||''}" placeholder="0.00"/></div>
+    <button class="ri" onclick="document.getElementById('omr${n}').remove()" title="Remove">×</button>
+  </div>`;
+  document.getElementById('om-items').appendChild(div);
+}
+
+function getOmItems(){
+  return Array.from(document.querySelectorAll('.mi-row')).map(el=>({
+    product_name:el.querySelector('.omp').value.trim(),
+    quantity:parseInt(el.querySelector('.omq').value)||1,
+    mg:el.querySelector('.omm').value.trim(),
+    cost:parseFloat(el.querySelector('.omc').value)||0,
+  })).filter(i=>i.product_name);
+}
+
+async function saveOrder(){
+  const alert=document.getElementById('om-alert');alert.classList.remove('show');
+  const items=getOmItems();
+  if(!items.length){alert.textContent='Add at least one medicine item.';alert.className='alert error show';return;}
+  const payload={
+    order_status: document.getElementById('om-status').value,
+    lead_source:  document.getElementById('om-source').value,
+    tracking_id:  document.getElementById('om-tracking').value.trim(),
+    notes:        document.getElementById('om-notes').value.trim(),
+    first_name:   document.getElementById('om-fname').value.trim(),
+    last_name:    document.getElementById('om-lname').value.trim(),
+    phone:        document.getElementById('om-phone').value.trim(),
+    email:        document.getElementById('om-email').value.trim(),
+    street_address:document.getElementById('om-addr').value.trim(),
+    city:         document.getElementById('om-city').value.trim(),
+    state:        document.getElementById('om-state').value.trim(),
+    pincode:      document.getElementById('om-pincode').value.trim(),
+    country:      document.getElementById('om-country').value.trim(),
+    items,
+  };
+  try{
+    const r=await fetch(`${API}/admin/orders/${editingOrder}`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload)});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||(d.errors&&d.errors[0]?.msg)||'Update failed');
+    alert.textContent='✅ Order updated successfully!';alert.className='alert success show';
+    setTimeout(()=>{ closeModal('order-modal'); loadOrders(curPage); loadStats(); },900);
+  }catch(e){alert.textContent='❌ '+e.message;alert.className='alert error show';}
+}
+
+// ── Customers ─────────────────────────────────────────────────────────────
+let custPage=1;
+let custSearchTimer=null;
+
+function searchCustomers(val){
+  clearTimeout(custSearchTimer);
+  custSearchTimer=setTimeout(()=>loadCustomers(1,val),400);
+}
+
+async function loadCustomers(page=1, search=''){
+  custPage=page;
+  const tbody=document.getElementById('ctbody');
+  tbody.innerHTML='<tr><td colspan="8"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr>';
+  try{
+    const qs=`page=${page}&limit=50${search?'&search='+encodeURIComponent(search):''}`;
+    const r=await fetch(`${API}/admin/customers?${qs}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    document.getElementById('c-count').textContent=`${d.pagination.total} customers`;
+    document.getElementById('cpi').textContent=`Showing ${d.customers.length} of ${d.pagination.total}`;
+    renderPagination('cpbs',d.pagination,(p)=>loadCustomers(p,search));
+
+    if(!d.customers.length){tbody.innerHTML='<tr><td colspan="8"><div class="es"><div class="ico">👥</div><p>No customers found.</p></div></td></tr>';return;}
+    // console.log(d.customers);
+    tbody.innerHTML=d.customers.map(c=>`<tr>
+      <td><strong style="font-size:12px">${c.phone}</strong></td>
+      <td>${c.first_name} ${c.last_name}</td>
+      <td style="font-size:12px">${c.email||'—'}</td>
+      <td style="font-size:12px">${[c.city,c.state,c.country].filter(Boolean).join(', ')||'—'}</td>
+      <td><strong>${c.total_orders}</strong></td>
+      <td>₹${parseFloat(c.total_spent||0).toFixed(2)}</td>
+      <td style="font-size:12px">${c.last_order_date?new Date(c.last_order_date).toLocaleDateString():'—'}</td>
+      <td><button class="be2" onclick="viewCustomer('${encodeURIComponent(c.phone)}','${c.first_name} ${c.last_name}')">View History</button></td>
+    </tr>`).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div></td></tr>`;
+  }
+}
+
+async function viewCustomer(phoneEnc, name){
+  document.getElementById('cm-sub').textContent=name;
+  document.getElementById('cm-body').innerHTML='<div class="es"><div class="ico">⏳</div><p>Loading…</p></div>';
+  openModal('cust-modal');
+  try{
+    const r=await fetch(`${API}/admin/customers/${phoneEnc}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    const c=d.customer;
+    const orders=groupOrdersById(d.orders);
+    orders.forEach(o=>{ o.items=parseItems(o.items); o.order_total=calcOrderTotal(o.items); });
+    // console.log(orders);
+    const totalSpent=orders.reduce((s,o)=>s+parseFloat(o.order_total||0),0);
+    const ordersHtml=orders.length?orders.map(o=>{
+      const itemsHtml=(o.items||[]).map(i=>`<span style="font-size:12px;color:var(--muted)">• ${i.product_name} ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</span>`).join('<br/>');
+      return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><strong style="font-size:13px">${o.order_id}</strong><span style="font-size:11px;color:var(--muted);margin-left:10px">${new Date(o.order_date).toLocaleDateString()}</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="src-bdg">${o.lead_source}</span>
+            <span class="bdg ${o.order_status}">${o.order_status}</span>
+          </div>
+        </div>
+        <div>${itemsHtml}</div>
+        <div style="margin-top:8px;font-size:13px;font-weight:600">Order Total: ₹${parseFloat(o.order_total||0).toFixed(2)}</div>
+        ${o.tracking_id?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Tracking: ${o.tracking_id}</div>`:''}
+        <div style="font-size:12px;color:var(--muted)">Agent: ${o.agent_name}</div>
+      </div>`;
+    }).join('') : '<p style="color:var(--muted);text-align:center;padding:20px">No orders yet.</p>';
+
+    document.getElementById('cm-body').innerHTML=`
+      <div class="cust-panel">
+        <div class="cust-header">
+          <div class="cust-avatar">${c.first_name[0]}${c.last_name[0]}</div>
+          <div>
+            <div style="font-size:16px;font-weight:600">${c.first_name} ${c.last_name}</div>
+            <div style="font-size:13px;color:var(--muted)">${c.phone} • ${c.email||'No email'}</div>
+            <div style="font-size:12px;color:var(--muted)">${[c.city,c.state,c.country].filter(Boolean).join(', ')||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:24px">
+          <div><div style="font-size:11px;color:var(--muted)">TOTAL ORDERS</div><div style="font-size:20px;font-weight:600">${orders.length}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">TOTAL SPENT</div><div style="font-size:20px;font-weight:600">₹${totalSpent.toFixed(2)}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">CUSTOMER SINCE</div><div style="font-size:16px;font-weight:600">${new Date(c.created_at).toLocaleDateString()}</div></div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">Purchase History</div>
+      ${ordersHtml}`;
+  }catch(e){
+    document.getElementById('cm-body').innerHTML=`<p style="color:var(--error)">Error: ${e.message}</p>`;
+  }
+}
+
+// ── Agents ─────────────────────────────────────────────────────────────────
+let editingAgentId=null;
+
+async function loadAgents(){
+  const tbody=document.getElementById('atbody');
+  tbody.innerHTML='<tr><td colspan="8"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr>';
+  try{
+    const r=await fetch(`${API}/admin/agents`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    if(!d.agents.length){tbody.innerHTML='<tr><td colspan="8"><div class="es"><div class="ico">🧑‍💼</div><p>No agents yet.</p></div></td></tr>';return;}
+    tbody.innerHTML=d.agents.map(a=>`<tr>
+      <td><strong>${a.agent_id}</strong></td>
+      <td>${a.agent_name}</td>
+      <td style="font-size:12px">${a.email||'—'}</td>
+      <td style="font-size:12px">${a.phone||'—'}</td>
+      <td><span class="ag-status ${a.is_active?'active':'inactive'}"></span>${a.is_active?'Active':'Inactive'}</td>
+      <td>${a.total_orders}</td>
+      <td style="font-size:12px">${new Date(a.created_at).toLocaleDateString()}</td>
+      <td style="display:flex;gap:6px">
+        <button class="be2" onclick="openEditAgent('${a.agent_id}','${a.agent_name}','${a.email||''}','${a.phone||''}',${a.is_active})">Edit</button>
+        <button class="be2 danger" onclick="toggleAgent('${a.agent_id}',${a.is_active})">${a.is_active?'Deactivate':'Activate'}</button>
+      </td>
+    </tr>`).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div></td></tr>`;
+  }
+}
+
+function openAddAgent(){
+  editingAgentId=null;
+  document.getElementById('am-title').textContent='Add New Agent';
+  document.getElementById('am-sub').textContent='All fields marked with * are required';
+  document.getElementById('am-id').value='';document.getElementById('am-id').disabled=false;
+  document.getElementById('am-name').value='';document.getElementById('am-pass').value='';
+  document.getElementById('am-email').value='';document.getElementById('am-phone').value='';
+  document.getElementById('am-active').value='true';
+  document.getElementById('am-alert').classList.remove('show');
+  document.getElementById('am-save').textContent='Create Agent';
+  openModal('agent-modal');
+}
+
+function openEditAgent(id,name,email,phone,active){
+  editingAgentId=id;
+  document.getElementById('am-title').textContent='Edit Agent';
+  document.getElementById('am-sub').textContent='Agent ID: '+id+' — Leave password blank to keep unchanged';
+  document.getElementById('am-id').value=id;document.getElementById('am-id').disabled=true;
+  document.getElementById('am-name').value=name;document.getElementById('am-pass').value='';
+  document.getElementById('am-email').value=email;document.getElementById('am-phone').value=phone;
+  document.getElementById('am-active').value=String(active);
+  document.getElementById('am-alert').classList.remove('show');
+  document.getElementById('am-save').textContent='Save Changes';
+  openModal('agent-modal');
+}
+
+async function saveAgent(){
+  const alertEl=document.getElementById('am-alert');alertEl.classList.remove('show');
+  const name=document.getElementById('am-name').value.trim();
+  const pass=document.getElementById('am-pass').value;
+  const email=document.getElementById('am-email').value.trim();
+  const phone=document.getElementById('am-phone').value.trim();
+  const active=document.getElementById('am-active').value;
+
+  if(!name){alertEl.textContent='Agent name is required.';alertEl.className='alert error show';return;}
+  if(!editingAgentId&&!pass){alertEl.textContent='Password is required for new agents.';alertEl.className='alert error show';return;}
+  if(pass&&pass.length<6){alertEl.textContent='Password must be at least 6 characters.';alertEl.className='alert error show';return;}
+
+  try{
+    let url,method,payload;
+    if(!editingAgentId){
+      const id=document.getElementById('am-id').value.trim();
+      if(!id){alertEl.textContent='Agent ID is required.';alertEl.className='alert error show';return;}
+      url=`${API}/admin/agents`;method='POST';
+      payload={agent_id:id,agent_name:name,password:pass,email,phone};
+    } else {
+      url=`${API}/admin/agents/${editingAgentId}`;method='PUT';
+      payload={agent_name:name,email,phone,is_active:active==='true'};
+      if(pass)payload.password=pass;
+    }
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload)});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||(d.errors&&d.errors[0]?.msg)||'Failed');
+    alertEl.textContent='✅ '+(editingAgentId?'Agent updated!':'Agent created!');alertEl.className='alert success show';
+    setTimeout(()=>{closeModal('agent-modal');loadAgents();},900);
+  }catch(e){alertEl.textContent='❌ '+e.message;alertEl.className='alert error show';}
+}
+
+async function toggleAgent(agentId, isActive){
+  if(!confirm(`${isActive?'Deactivate':'Activate'} agent ${agentId}?`))return;
+  try{
+    const r=await fetch(`${API}/admin/agents/${agentId}`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({is_active:!isActive})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    loadAgents();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function renderPagination(containerId, p, loadFn){
+  const c=document.getElementById(containerId);if(!c)return;
+  if(p.pages<=1){c.innerHTML='';return;}
+  let html=`<button class="pb" onclick="(${loadFn.name})(${p.page-1})" ${p.page<=1?'disabled':''}>← Prev</button>`;
+  for(let i=Math.max(1,p.page-2);i<=Math.min(p.pages,p.page+2);i++){
+    html+=`<button class="pb ${i===p.page?'active':''}" onclick="(${loadFn.name})(${i})">${i}</button>`;
+  }
+  html+=`<button class="pb" onclick="(${loadFn.name})(${p.page+1})" ${p.page>=p.pages?'disabled':''}>Next →</button>`;
+  c.innerHTML=html;
+}
+
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// Close on overlay click
+['order-modal','agent-modal','cust-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});
+});
+
+// Init
+loadStats();
+showPage('orders',document.querySelector('.stab'));
+</script>
+</body>
+</html>
