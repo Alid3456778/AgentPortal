@@ -1,0 +1,27 @@
+name: CI CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+   
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_IP }}
+          username: ${{ secrets.SSH_VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd apps/AgentPortal
+            git pull origin main
+            cd backend
+            npm install
+            
