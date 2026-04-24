@@ -251,6 +251,16 @@
           <option value="Other">Other</option>
         </select>
       </div>
+      <div class="mfg"><label>Payment Mode</label>
+        <select id="om-payment" onchange="onOmPaymentChange()">
+          <option value="">— Select Payment Mode —</option>
+          <option value="Zelle">Zelle</option><option value="Cash app">Cash app</option>
+          <option value="Venmo">Venmo</option><option value="Bitcoin">Bitcoin</option>
+          <option value="Apple pay">Apple pay</option><option value="Card Payment">Card Payment</option>
+          <option value="Pending">Pending</option><option value="Other">Other</option>
+        </select>
+        <input id="om-payment-other" placeholder="Enter custom payment mode" style="display:none; margin-top:6px;" />
+      </div>
       <div class="mfg"><label>Tracking ID</label><input id="om-tracking" placeholder="Optional"/></div>
       <div class="mfg"><label>Notes</label><input id="om-notes" placeholder="Optional"/></div>
     </div>
@@ -385,7 +395,7 @@ async function loadStats(){
     const r=await fetch(`${API}/admin/stats`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
     document.getElementById('s-orders').textContent=d.total_orders?.toLocaleString()||'0';
-    document.getElementById('s-rev').textContent='₹'+(d.total_revenue||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+    document.getElementById('s-rev').textContent='$'+(d.total_revenue||0).toLocaleString('en-IN',{maximumFractionDigits:0});
     document.getElementById('s-cust').textContent=d.total_customers?.toLocaleString()||'0';
     const del=d.status_breakdown?.find(s=>s.order_status==='delivered');
     document.getElementById('s-del').textContent=del?del.count:'0';
@@ -436,7 +446,7 @@ async function loadOrders(page=1){
         <td><span class="src-bdg">${o.lead_source}</span></td>
         <td><div>${o.first_name} ${o.last_name}</div><div style="font-size:11px;color:var(--muted)">${o.phone}</div></td>
         <td style="max-width:180px">${itemHtml||'<span style="color:var(--muted)">—</span>'}</td>
-        <td>₹${total.toFixed(2)}</td>
+        <td>$${total.toFixed(2)}</td>
         <td style="font-size:12px">${o.tracking_id||'<span style="color:var(--muted)">—</span>'}</td>
         <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
         <td><button class="be2" onclick="openOrderEdit('${o.order_id}')">Edit</button></td>
@@ -482,6 +492,22 @@ async function openOrderEdit(orderId){
     const o=d.order;
     document.getElementById('om-status').value   = o.order_status||'placed';
     document.getElementById('om-source').value   = o.lead_source||'';
+    const paymentSelect = document.getElementById('om-payment');
+    const paymentOther = document.getElementById('om-payment-other');
+    const paymentValue = o.payment_mode || '';
+    if (paymentValue && Array.from(paymentSelect.options).some(opt => opt.value === paymentValue)) {
+      paymentSelect.value = paymentValue;
+      paymentOther.style.display = 'none';
+      paymentOther.value = '';
+    } else if (paymentValue) {
+      paymentSelect.value = 'Other';
+      paymentOther.style.display = 'block';
+      paymentOther.value = paymentValue;
+    } else {
+      paymentSelect.value = '';
+      paymentOther.style.display = 'none';
+      paymentOther.value = '';
+    }
     document.getElementById('om-tracking').value = o.tracking_id||'';
     document.getElementById('om-notes').value    = o.notes||'';
     document.getElementById('om-fname').value    = o.first_name||'';
@@ -505,7 +531,7 @@ function omAddItem(d={}){
     <div class="fg"><label>Product</label><input class="omp" value="${d.product_name||''}" placeholder="Product name"/></div>
     <div class="fg"><label>Qty</label><input class="omq" type="number" min="1" value="${d.quantity||''}" placeholder="1"/></div>
     <div class="fg"><label>MG</label><input class="omm" value="${d.mg||''}" placeholder="500mg"/></div>
-    <div class="fg"><label>Cost ₹</label><input class="omc" type="number" min="0" step="0.01" value="${d.cost||''}" placeholder="0.00"/></div>
+    <div class="fg"><label>Cost $</label><input class="omc" type="number" min="0" step="0.01" value="${d.cost||''}" placeholder="0.00"/></div>
     <button class="ri" onclick="document.getElementById('omr${n}').remove()" title="Remove">×</button>
   </div>`;
   document.getElementById('om-items').appendChild(div);
@@ -520,13 +546,31 @@ function getOmItems(){
   })).filter(i=>i.product_name);
 }
 
+function onOmPaymentChange(){
+  const sel = document.getElementById('om-payment');
+  const other = document.getElementById('om-payment-other');
+  if(sel.value === 'Other'){
+    other.style.display = 'block';
+  } else {
+    other.style.display = 'none';
+    other.value = '';
+  }
+}
+
 async function saveOrder(){
   const alert=document.getElementById('om-alert');alert.classList.remove('show');
   const items=getOmItems();
   if(!items.length){alert.textContent='Add at least one medicine item.';alert.className='alert error show';return;}
+  const omPayment = document.getElementById('om-payment').value;
+  const omPaymentOther = document.getElementById('om-payment-other').value.trim();
+  const paymentModeValue = omPayment === 'Other' ? omPaymentOther : omPayment;
+  if (omPayment === 'Other' && !paymentModeValue) {
+    alert.textContent='Enter a custom payment mode for Other.';alert.className='alert error show';return;
+  }
   const payload={
     order_status: document.getElementById('om-status').value,
     lead_source:  document.getElementById('om-source').value,
+    payment_mode: paymentModeValue,
     tracking_id:  document.getElementById('om-tracking').value.trim(),
     notes:        document.getElementById('om-notes').value.trim(),
     first_name:   document.getElementById('om-fname').value.trim(),
@@ -577,7 +621,7 @@ async function loadCustomers(page=1, search=''){
       <td style="font-size:12px">${c.email||'—'}</td>
       <td style="font-size:12px">${[c.city,c.state,c.country].filter(Boolean).join(', ')||'—'}</td>
       <td><strong>${c.total_orders}</strong></td>
-      <td>₹${parseFloat(c.total_spent||0).toFixed(2)}</td>
+      <td>$${parseFloat(c.total_spent||0).toFixed(2)}</td>
       <td style="font-size:12px">${c.last_order_date?new Date(c.last_order_date).toLocaleDateString():'—'}</td>
       <td><button class="be2" onclick="viewCustomer('${encodeURIComponent(c.phone)}','${c.first_name} ${c.last_name}')">View History</button></td>
     </tr>`).join('');
@@ -599,7 +643,7 @@ async function viewCustomer(phoneEnc, name){
     // console.log(orders);
     const totalSpent=orders.reduce((s,o)=>s+parseFloat(o.order_total||0),0);
     const ordersHtml=orders.length?orders.map(o=>{
-      const itemsHtml=(o.items||[]).map(i=>`<span style="font-size:12px;color:var(--muted)">• ${i.product_name} ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</span>`).join('<br/>');
+      const itemsHtml=(o.items||[]).map(i=>`<span style="font-size:12px;color:var(--muted)">• ${i.product_name} ${i.quantity}×${i.mg} @ $${parseFloat(i.cost).toFixed(2)}</span>`).join('<br/>');
       return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div><strong style="font-size:13px">${o.order_id}</strong><span style="font-size:11px;color:var(--muted);margin-left:10px">${new Date(o.order_date).toLocaleDateString()}</span></div>
@@ -609,7 +653,7 @@ async function viewCustomer(phoneEnc, name){
           </div>
         </div>
         <div>${itemsHtml}</div>
-        <div style="margin-top:8px;font-size:13px;font-weight:600">Order Total: ₹${parseFloat(o.order_total||0).toFixed(2)}</div>
+        <div style="margin-top:8px;font-size:13px;font-weight:600">Order Total: $${parseFloat(o.order_total||0).toFixed(2)}</div>
         ${o.tracking_id?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Tracking: ${o.tracking_id}</div>`:''}
         <div style="font-size:12px;color:var(--muted)">Agent: ${o.agent_name}</div>
       </div>`;
@@ -627,7 +671,7 @@ async function viewCustomer(phoneEnc, name){
         </div>
         <div style="display:flex;gap:24px">
           <div><div style="font-size:11px;color:var(--muted)">TOTAL ORDERS</div><div style="font-size:20px;font-weight:600">${orders.length}</div></div>
-          <div><div style="font-size:11px;color:var(--muted)">TOTAL SPENT</div><div style="font-size:20px;font-weight:600">₹${totalSpent.toFixed(2)}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">TOTAL SPENT</div><div style="font-size:20px;font-weight:600">$${totalSpent.toFixed(2)}</div></div>
           <div><div style="font-size:11px;color:var(--muted)">CUSTOMER SINCE</div><div style="font-size:16px;font-weight:600">${new Date(c.created_at).toLocaleDateString()}</div></div>
         </div>
       </div>

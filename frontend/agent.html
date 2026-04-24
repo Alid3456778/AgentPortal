@@ -350,9 +350,6 @@
           transform: rotate(360deg);
         }
       }
-      #orders-section {
-        display: none;
-      }
       .tw {
         overflow-x: auto;
         border-radius: 12px;
@@ -460,20 +457,6 @@
         <span class="nt">PayerPortal</span>
       </div>
       <div class="nr">
-        <div class="tabs">
-          <button class="tb active" onclick="showTab('form', this)">
-            New Order
-          </button>
-          <button
-            class="tb"
-            onclick="
-              showTab('orders', this);
-              loadOrders();
-            "
-          >
-            My Orders
-          </button>
-        </div>
         <span class="nu">Agent: <strong id="agn">—</strong></span>
 	        <button class="btn-sm bg" onclick="logout()">Sign Out</button>
 	      </div>
@@ -600,6 +583,22 @@
               >
             </div>
             <div class="fg">
+              <label>Payment Mode <span class="req">*</span></label>
+              <select id="payment_mode" onchange="onPaymentModeChange()">
+                <option value="">— Select Payment Mode —</option>
+                <option value="Zelle">Zelle</option>
+                <option value="Cash app">Cash app</option>
+                <option value="Venmo">Venmo</option>
+                <option value="Bitcoin">Bitcoin</option>
+                <option value="Apple pay">Apple pay</option>
+                <option value="Card Payment">Card Payment</option>
+                <option value="Pending">Pending</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="fe" id="e-payment_mode"></span>
+              <input id="payment_mode_other" placeholder="Enter custom payment mode" style="display: none; margin-top: 6px;" />
+            </div>
+            <div class="fg">
               <label
                 >Tracking ID
                 <span style="color: var(--muted); font-weight: 400"
@@ -627,20 +626,6 @@
 	        </div>
 	      </div>
 
-      <div id="orders-section">
-        <div class="ph">
-          <h1>My Orders</h1>
-          <p>All orders you have submitted.</p>
-        </div>
-        <div class="card">
-          <div id="oc">
-            <div class="es">
-              <div class="ic">⏳</div>
-              <p>Loading…</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </main>
     <script>
       const API = window.location.origin + "/api";
@@ -655,19 +640,13 @@
         localStorage.clear();
         window.location.href = "index.html";
       }
-      function showTab(t, btn) {
-        document
-          .querySelectorAll(".tb")
-          .forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById("form-section").style.display =
-          t === "form" ? "block" : "none";
-        document.getElementById("orders-section").style.display =
-          t === "orders" ? "block" : "none";
-      }
       function onSourceChange() {
         const v = document.getElementById("lead_source").value;
         document.getElementById("ehint").style.display = v ? "block" : "none";
+      }
+      function onPaymentModeChange() {
+        const v = document.getElementById("payment_mode").value;
+        document.getElementById("payment_mode_other").style.display = v === "Other" ? "block" : "none";
       }
 
       let ic = 0;
@@ -681,7 +660,7 @@
     <div class="fg"><label>Product Name<span class="req">*</span></label><input class="ip" placeholder="e.g. Omega-3 Capsules" value="${d.product_name || ""}"/></div>
     <div class="fg"><label>Qty<span class="req">*</span></label><input class="iq" type="number" placeholder="1" min="1" value="${d.quantity || ""}"/></div>
     <div class="fg"><label>MG<span class="req">*</span></label><input class="im" placeholder="500mg" value="${d.mg || ""}"/></div>
-    <div class="fg"><label>Cost ₹<span class="req">*</span></label><input class="ic" type="number" placeholder="0.00" min="0" step="0.01" value="${d.cost || ""}" oninput="updateTotal(${n})"/></div>
+    <div class="fg"><label>Cost $<span class="req">*</span></label><input class="ic" type="number" placeholder="0.00" min="0" step="0.01" value="${d.cost || ""}" oninput="updateTotal(${n})"/></div>
     <button class="ri" onclick="removeItem(${n})" title="Remove">×</button>
   </div><div class="itotal" id="it${n}"></div>`;
         document.getElementById("il").appendChild(div);
@@ -697,7 +676,7 @@
         const c = parseFloat(el.querySelector(".ic").value) || 0;
         const t = document.getElementById("it" + n);
         t.textContent = 
-          c > 0 ? `Line total: ₹${c.toFixed(2)}` : "";
+          c > 0 ? `Line total: $${c.toFixed(2)}` : "";
       }
       function getItems() {
         return Array.from(document.querySelectorAll(".mi")).map((el) => ({
@@ -755,6 +734,9 @@
           if (el) el.value = id === "country" ? "India" : "";
         });
         document.getElementById("lead_source").value = "";
+        document.getElementById("payment_mode").value = "";
+        document.getElementById("payment_mode_other").value = "";
+        document.getElementById("payment_mode_other").style.display = "none";
         document.getElementById("il").innerHTML = "";
         ic = 0;
 	        addItem();
@@ -778,6 +760,7 @@
           phone: document.getElementById("phone").value.trim(),
           email: document.getElementById("email").value.trim(),
           lead_source: document.getElementById("lead_source").value,
+          payment_mode: document.getElementById("payment_mode").value === "Other" ? document.getElementById("payment_mode_other").value.trim() : document.getElementById("payment_mode").value,
           tracking_id: document.getElementById("tracking_id").value.trim(),
           notes: document.getElementById("notes").value.trim(),
           items: getItems(),
@@ -794,6 +777,7 @@
           "country",
           "phone",
           "lead_source",
+          "payment_mode",
         ].forEach((k) => {
           if (!f[k]) {
             fErr(k, "Required");
@@ -850,126 +834,6 @@
         } finally {
           btn.disabled = false;
           btn.innerHTML = "Submit Order";
-        }
-      }
-
-      async function loadOrders() {
-        const oc = document.getElementById("oc");
-        oc.innerHTML =
-          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
-        try {
-          const res = await fetch(`${API}/orders/mine`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          if (!data.orders.length) {
-            oc.innerHTML =
-              '<div class="es"><div class="ic">📋</div><p>No orders yet.</p></div>';
-            return;
-          }
-
-          const parseItems = (items) => {
-            if (Array.isArray(items)) return items;
-            if (typeof items === "string") {
-              try {
-                const parsed = JSON.parse(items);
-                return Array.isArray(parsed) ? parsed : [];
-              } catch {
-                return [];
-              }
-            }
-            return [];
-          };
-
-          const groupOrdersById = (orders) => {
-            const byId = new Map();
-            for (const o of orders || []) {
-              const key = o && o.order_id;
-              if (!key) continue;
-
-              const existingItems = parseItems(o.items);
-              const rowItems = existingItems.length
-                ? existingItems
-                : o.product_name
-                  ? [
-                      {
-                        product_name: o.product_name,
-                        quantity: o.quantity,
-                        mg: o.mg,
-                        cost: o.cost,
-                      },
-                    ]
-                  : [];
-
-              if (!byId.has(key)) {
-                byId.set(key, { ...o, items: [...rowItems] });
-                continue;
-              }
-
-              const ex = byId.get(key);
-              ex.items = [...(ex.items || []), ...rowItems];
-              if (!ex.tracking_id && o.tracking_id) ex.tracking_id = o.tracking_id;
-              if (!ex.notes && o.notes) ex.notes = o.notes;
-              if (!ex.order_status && o.order_status) ex.order_status = o.order_status;
-              if (!ex.order_date && o.order_date) ex.order_date = o.order_date;
-            }
-            return Array.from(byId.values());
-          };
-
-          const groupedOrders = groupOrdersById(data.orders);
-
-          const rows = groupedOrders
-            .map((o) => {
-              const items = (o.items || [])
-                .map(
-                  (i) =>
-                    `<div class="ip">• ${i.product_name} — ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</div>`,
-                )
-                .join("");
-              const total = (o.items || []).reduce(
-                (s, i) =>
-                  s +
-                  (parseFloat(i.cost || 0) || 0),
-                0,
-              );
-              return `<tr>
-        <td><strong style="font-size:12px">${o.order_id}</strong><br/><span style="font-size:11px;color:var(--muted)">${new Date(o.order_date).toLocaleDateString()}</span></td>
-        <td>${o.first_name} ${o.last_name}<br/><span style="font-size:11px;color:var(--muted)">${o.phone}</span></td>
-        <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: ₹${total.toFixed(2)}</div></td>
-        <td style="font-size:12px">${o.lead_source}</td>
-        <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
-        <td>${o.tracking_id ? `<code style="font-size:11px">${o.tracking_id}</code>` : `<button class="te" onclick="updTrack('${o.order_id}',this)">+ Add</button>`}</td>
-      </tr>`;
-            })
-            .join("");
-          oc.innerHTML = `<div style="font-size:13px;color:var(--muted);margin-bottom:14px"><strong style="color:var(--text)">${data.pagination.total}</strong> order(s)</div>
-      <div class="tw"><table>
-        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Source</th><th>Status</th><th>Tracking</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>`;
-        } catch (e) {
-          oc.innerHTML = `<div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div>`;
-        }
-      }
-
-      async function updTrack(oid, btn) {
-        const id = prompt("Enter Tracking ID:");
-        if (!id?.trim()) return;
-        try {
-          const res = await fetch(`${API}/orders/${oid}/tracking`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ tracking_id: id.trim() }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          btn.outerHTML = `<code style="font-size:11px">${id.trim()}</code>`;
-        } catch (e) {
-          alert("Error: " + e.message);
         }
       }
       addItem();
