@@ -95,7 +95,7 @@ const buildOrderEmail = (order, items) => {
     </tr>
   `).join('');
 
-  const total = items.reduce((sum, i) => sum + parseFloat(i.cost) * i.quantity, 0);
+  const total = items.reduce((sum, i) => sum + parseFloat(i.cost), 0);
 
   return `
 <!DOCTYPE html>
