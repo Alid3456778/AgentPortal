@@ -253,7 +253,39 @@ router.put('/orders/:order_id', [
 });
 
 // ── GET /api/admin/agents ─────────────────────────────────────────────────
-router.get('/agents', async (req, res) => {
+// ── DELETE /api/admin/orders/:order_id — delete order (cascades order_items) ──
+router.delete('/orders/:order_id', [
+  param('order_id').notEmpty(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { order_id } = req.params;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const exists = await client.query('SELECT order_id FROM orders WHERE order_id=$1', [order_id]);
+    if (!exists.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    await client.query('DELETE FROM orders WHERE order_id=$1', [order_id]);
+    await client.query('COMMIT');
+
+    return res.json({ message: 'Order deleted successfully.', order_id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[ADMIN] delete order error:', err.message);
+    return res.status(500).json({ error: 'Failed to delete order.' });
+  } finally {
+    client.release();
+  }
+});
+
+ router.get('/agents', async (req, res) => {
   try {
     const result = await query(`
       SELECT a.id, a.agent_id, a.agent_name, a.email, a.phone, a.is_active, a.created_at,
