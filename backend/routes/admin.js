@@ -39,7 +39,7 @@ const buildFilters = (q) => {
 router.get('/stats', async (req, res) => {
   try {
     const [tot, breakdown, topAgents, totalCustomers] = await Promise.all([
-      query(`SELECT COUNT(*) AS total,
+      query(`SELECT (SELECT COUNT(*) FROM orders) AS total,
                COALESCE(SUM(i.cost),0) AS total_revenue
              FROM orders o
              LEFT JOIN order_items i ON i.order_id=o.order_id`),
