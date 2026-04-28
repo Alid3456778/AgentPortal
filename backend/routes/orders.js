@@ -8,7 +8,7 @@ const { sendOrderConfirmation } = require('../services/emailService');
 const router = express.Router();
 
 // Accept simplified lead sources; keep old values for backward compatibility with existing data.
-const LEAD_SOURCES = ['Truemed','Macland','Syncore','Tradewave','Other','Syncore_IndiaMart','Tradewave_IndiaMart'];
+const LEAD_SOURCES = ['Truemed','Mcland','Syncore','Tradewave','Other','Syncore_IndiaMart','Tradewave_IndiaMart'];
 
 const generateOrderId = () => {
   const d = new Date();
@@ -32,6 +32,7 @@ const orderValidation = [
   body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('lead_source').isIn(LEAD_SOURCES).withMessage('Invalid lead source'),
   body('payment_mode').trim().notEmpty().withMessage('Payment mode is required'),
+  body('order_info').trim().notEmpty().withMessage('Order info is required'),
   body('items').isArray({ min: 1 }).withMessage('At least one medicine item is required'),
   body('items.*.product_name').trim().notEmpty().withMessage('Product name required for each item'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be >= 1 for each item'),
@@ -48,13 +49,14 @@ router.post('/', verifyToken, agentOnly, orderValidation, async (req, res) => {
 
   const {
     first_name, last_name, street_address, city, state, pincode, country,
-    phone, email, lead_source, payment_mode, tracking_id, notes, items,
+    phone, email, lead_source, payment_mode, order_info, tracking_id, notes, items,
   } = req.body;
 
   const agent_id   = req.user.login_id;
   const agent_name = req.user.name;
   
-  console.log("Lead source:", req.body.lead_source);
+  // console.log("Lead source:", req.body.lead_source);
+  // console.log("Order info:", req.body.order_info);
 
   const client = await require('../db/connection').pool.connect();
   try {
@@ -84,12 +86,12 @@ router.post('/', verifyToken, agentOnly, orderValidation, async (req, res) => {
     // 3. Insert order
     const orderResult = await client.query(`
       INSERT INTO orders (
-        order_id, agent_id, agent_name, lead_source, payment_mode, customer_phone,
+        order_id, agent_id, agent_name, lead_source, payment_mode, order_info, customer_phone,
         first_name, last_name, street_address, city, state, pincode, country,
         phone, email, tracking_id, notes, order_status
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'placed')
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,'placed')
       RETURNING *;
-    `, [order_id, agent_id, agent_name, lead_source, payment_mode, phone,
+    `, [order_id, agent_id, agent_name, lead_source, payment_mode, order_info, phone,
         first_name, last_name, street_address, city, state, pincode, country,
         phone, email, tracking_id||null, notes||null]);
 

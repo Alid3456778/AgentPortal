@@ -10,7 +10,7 @@ const router = express.Router();
 router.use(verifyToken, adminOnly);
 
 // Accept simplified lead sources; keep old values for backward compatibility with existing data.
-const LEAD_SOURCES = ['Truemed','Macland','Syncore','Tradewave','Other','Syncore_IndiaMart','Tradewave_IndiaMart'];
+const LEAD_SOURCES = ['Truemed','Mcland','Syncore','Tradewave','Other','Syncore_IndiaMart','Tradewave_IndiaMart'];
 const STATUSES     = ['placed','processing','shipped','delivered','cancelled'];
 
 // ── Filter builder ─────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ const buildFilters = (q) => {
     else      { conds.push(`o.lead_source=$${idx++}`);        vals.push(q.lead_source); }
   }
   if (q.order_status)   { conds.push(`o.order_status=$${idx++}`);         vals.push(q.order_status); }
-  if (q.search_phone)   { conds.push(`o.phone ILIKE $${idx++}`);          vals.push(`%${q.search_phone}%`); }
+  if (q.order_info)     { conds.push(`o.order_info=$${idx++}`);           vals.push(q.order_info); }
   return { whereClause: conds.length ? `WHERE ${conds.join(' AND ')}` : '', vals };
 };
 
@@ -83,7 +83,8 @@ router.get('/orders', async (req, res) => {
         LEFT JOIN order_items i ON i.order_id=o.order_id
         ${whereClause}
         GROUP BY o.id,o.order_id,o.order_date,o.order_status,o.agent_id,o.agent_name,
-                 o.lead_source,o.payment_mode,o.first_name,o.last_name,o.street_address,o.city,o.state,
+                 o.lead_source,o.payment_mode,o.order_info,
+                 o.first_name,o.last_name,o.street_address,o.city,o.state,
                  o.pincode,o.country,o.phone,o.email,o.tracking_id,o.notes,o.created_at,o.updated_at
         ORDER BY o.${safeSort} ${safeOrder}
         LIMIT $${vals.length+1} OFFSET $${vals.length+2};
@@ -111,13 +112,13 @@ router.get('/orders/export', async (req, res) => {
         o.agent_name AS "Agent Name", o.agent_id AS "Agent ID",
         o.lead_source AS "Lead Source",
         o.payment_mode AS "Payment Mode",
+        o.order_info AS "Order Info",
         o.first_name AS "First Name", o.last_name AS "Last Name",
         o.street_address AS "Street Address", o.city AS "City",
         o.state AS "State", o.pincode AS "Pincode", o.country AS "Country",
         o.phone AS "Phone", o.email AS "Email",
         i.product_name AS "Product", i.quantity AS "Qty", i.mg AS "MG",
         i.cost AS "Unit Cost",
-        (i.cost*i.quantity) AS "Line Total",
         COALESCE(o.tracking_id,'') AS "Tracking ID",
         COALESCE(o.notes,'') AS "Notes"
       FROM orders o
@@ -174,6 +175,7 @@ router.put('/orders/:order_id', [
   body('order_status').optional().isIn(STATUSES).withMessage('Invalid status'),
   body('lead_source').optional().isIn(LEAD_SOURCES).withMessage('Invalid lead source'),
   body('payment_mode').optional().trim().notEmpty().withMessage('Payment mode cannot be empty'),
+  body('order_info').optional().trim().notEmpty(),
   body('first_name').optional().trim().notEmpty(),
   body('last_name').optional().trim().notEmpty(),
   body('phone').optional().trim().notEmpty(),
@@ -185,7 +187,7 @@ router.put('/orders/:order_id', [
 
   const { order_id } = req.params;
   const {
-    order_status, lead_source, payment_mode, tracking_id, notes,
+    order_status, lead_source, payment_mode, tracking_id, notes, order_info,
     first_name, last_name, street_address, city, state, pincode, country, phone, email,
     items,
   } = req.body;
@@ -202,6 +204,7 @@ router.put('/orders/:order_id', [
     if (order_status   !== undefined) addSet('order_status', order_status);
     if (lead_source    !== undefined) addSet('lead_source', lead_source);
     if (payment_mode   !== undefined) addSet('payment_mode', payment_mode);
+    if (order_info     !== undefined) addSet('order_info', order_info||null);
     if (tracking_id    !== undefined) addSet('tracking_id', tracking_id||null);
     if (notes          !== undefined) addSet('notes', notes||null);
     if (first_name     !== undefined) addSet('first_name', first_name);

@@ -14,13 +14,13 @@ const getTransporter = (leadSource) => {
       name:  process.env.TRUEMED_FROM_NAME  || 'Truemed Orders',
       from:  process.env.TRUEMED_FROM_EMAIL,
     },
-    Macland: {
-      host:  process.env.MACLAND_SMTP_HOST,
-      port:  parseInt(process.env.MACLAND_SMTP_PORT) || 587,
-      user:  process.env.MACLAND_SMTP_USER,
-      pass:  process.env.MACLAND_SMTP_PASS,
-      name:  process.env.MACLAND_FROM_NAME  || 'Macland Orders',
-      from:  process.env.MACLAND_FROM_EMAIL,
+    Mcland: {
+      host:  process.env.MCLAND_SMTP_HOST,
+      port:  parseInt(process.env.MCLAND_SMTP_PORT) || 587,
+      user:  process.env.MCLAND_SMTP_USER,
+      pass:  process.env.MCLAND_SMTP_PASS,
+      name:  process.env.MCLAND_FROM_NAME  || 'Mcland Orders',
+      from:  process.env.MCLAND_FROM_EMAIL,
     },
     // New simplified lead sources (UI values)
     Syncore: {

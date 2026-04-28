@@ -131,7 +131,7 @@
               <select id="lead_source" onchange="onSourceChange()">
                 <option value="">— Select Source —</option>
                 <option value="Truemed">Truemed</option>
-                <option value="Macland">Macland</option>
+                <option value="Mcland">Mcland</option>
                 <option value="Syncore">Syncore</option>
                 <option value="Tradewave">Tradewave</option>
                 <option value="Other">Other</option>
@@ -158,6 +158,17 @@
               </select>
               <span class="fe" id="e-payment_mode"></span>
               <input id="payment_mode_other" placeholder="Enter custom payment mode" style="display: none; margin-top: 6px;" />
+            </div>
+            <div class="fg">
+              <label>Order Info <span class="req">*</span></label>
+              <select id="order_info" onchange="onOrderInfoChange()">
+                <option value="">— Select Order Info —</option>
+                <option value="ReOrder">Re-Order</option>
+                <option value="NewOrder">New Order</option>
+                <option value="RepeatOrder">Repeat Order</option>
+              </select>
+              <span class="fe" id="e-order_info"></span>
+              <input id="order_info_other" placeholder="Enter custom order info" style="display: none; margin-top: 6px;" />
             </div>
             <div class="fg">
               <label
@@ -208,6 +219,10 @@
       function onPaymentModeChange() {
         const v = document.getElementById("payment_mode").value;
         document.getElementById("payment_mode_other").style.display = v === "Other" ? "block" : "none";
+      }
+       function onOrderInfoChange() {
+        const v = document.getElementById("order_info").value;
+        document.getElementById("order_info_other").style.display = v === "Other" ? "block" : "none";
       }
 
       let ic = 0;
@@ -322,6 +337,7 @@
           email: document.getElementById("email").value.trim(),
           lead_source: document.getElementById("lead_source").value,
           payment_mode: document.getElementById("payment_mode").value === "Other" ? document.getElementById("payment_mode_other").value.trim() : document.getElementById("payment_mode").value,
+          order_info: document.getElementById("order_info").value === "Other" ? document.getElementById("order_info_other").value.trim() : document.getElementById("order_info").value,
           tracking_id: document.getElementById("tracking_id").value.trim(),
           notes: document.getElementById("notes").value.trim(),
           items: getItems(),
@@ -339,6 +355,7 @@
           "phone",
           "lead_source",
           "payment_mode",
+          "order_info",
         ].forEach((k) => {
           if (!f[k]) {
             fErr(k, "Required");

@@ -40,13 +40,13 @@
             <select id="f-src" class="fi">
               <option value="">All</option>
               <option value="Truemed">Truemed</option>
-              <option value="Macland">Macland</option>
+              <option value="Mcland">Mcland</option>
               <option value="Syncore">Syncore</option>
               <option value="Tradewave">Tradewave</option>
               <option value="Other">Other</option>
             </select>
           </div>
-          <div class="fg"><label>Status</label>
+          <div class="fg"><label>Order Status</label>
             <select id="f-status" class="fi">
               <option value="">All</option>
               <option value="placed">Placed</option>
@@ -56,7 +56,15 @@
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          <div class="fg"><label>Phone</label><input id="f-phone" class="fi" placeholder="Search phone…"/></div>
+          <div class="fg"><label>Order Info</label>
+            <select id="f-info" class="fi">
+              <option value="">All</option>
+              <option value="ReOrder">Re-Order</option>
+              <option value="NewOrder">New Order</option>
+              <option value="RepeatOrder">Repeat Order</option>
+            </select>
+          </div>
+          
           <div class="fg" style="flex-direction:row;align-items:flex-end;gap:8px">
             <button class="btn-sm bp" onclick="loadOrders(1)">Apply</button>
             <button class="btn-sm bg" onclick="clearFilters()">Reset</button>
@@ -135,7 +143,7 @@
       </div>
       <div class="mfg"><label>Lead Source</label>
         <select id="om-source">
-          <option value="Truemed">Truemed</option><option value="Macland">Macland</option>
+          <option value="Truemed">Truemed</option><option value="Mcland">Mcland</option>
           <option value="Syncore">Syncore</option>
           <option value="Tradewave">Tradewave</option>
           <option value="Other">Other</option>
@@ -150,6 +158,15 @@
           <option value="Pending">Pending</option><option value="Other">Other</option>
         </select>
         <input id="om-payment-other" placeholder="Enter custom payment mode" style="display:none; margin-top:6px;" />
+      </div>
+      <div class="mfg">
+        <label>Order Info</label>
+        <select id="om-order-info" >
+          <option value="">— Select Order Info —</option>
+          <option value="ReOrder">Re-Order</option>
+          <option value="NewOrder">New Order</option>
+          <option value="RepeatOrder">Repeat Order</option>
+        </select>
       </div>
       <div class="mfg"><label>Tracking ID</label><input id="om-tracking" placeholder="Optional"/></div>
       <div class="mfg"><label>Notes</label><input id="om-notes" placeholder="Optional"/></div>
@@ -302,7 +319,7 @@ function getFilters(extra={}){
     date_to:document.getElementById('f-to')?.value||'',
     lead_source:document.getElementById('f-src')?.value||'',
     order_status:document.getElementById('f-status')?.value||'',
-    search_phone:document.getElementById('f-phone')?.value.trim()||'',
+    order_info:document.getElementById('f-info')?.value||'',
     ...extra,
   };
   return Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
@@ -368,7 +385,7 @@ async function deleteOrder(orderId){
 }
 
 function clearFilters(){
-  ['f-agent','f-from','f-to','f-src','f-status','f-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-agent','f-from','f-to','f-src','f-status','f-info'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   loadOrders(1);
 }
 
@@ -395,6 +412,12 @@ async function openOrderEdit(orderId){
   editingOrder=orderId;
   document.getElementById('om-sub').textContent='Order: '+orderId;
   document.getElementById('om-items').innerHTML='';omItemCount=0;
+  
+  //Hinding the PopUp Alert of the Order Edit Modal
+  const alert = document.getElementById('om-alert');
+  alert.classList.remove('show', 'error', 'success');
+  alert.textContent = '';
+
   openModal('order-modal');
   try{
     const r=await fetch(`${API}/admin/orders/${orderId}`,{headers:{Authorization:`Bearer ${token}`}});
@@ -418,6 +441,7 @@ async function openOrderEdit(orderId){
       paymentOther.style.display = 'none';
       paymentOther.value = '';
     }
+    document.getElementById('om-order-info').value = o.order_info||'';
     document.getElementById('om-tracking').value = o.tracking_id||'';
     document.getElementById('om-notes').value    = o.notes||'';
     document.getElementById('om-fname').value    = o.first_name||'';
@@ -468,7 +492,8 @@ function onOmPaymentChange(){
 }
 
 async function saveOrder(){
-  const alert=document.getElementById('om-alert');alert.classList.remove('show');
+  const alert=document.getElementById('om-alert');
+  alert.classList.remove('show');
   const items=getOmItems();
   if(!items.length){alert.textContent='Add at least one medicine item.';alert.className='alert error show';return;}
   const omPayment = document.getElementById('om-payment').value;
@@ -481,6 +506,7 @@ async function saveOrder(){
     order_status: document.getElementById('om-status').value,
     lead_source:  document.getElementById('om-source').value,
     payment_mode: paymentModeValue,
+    order_info:   document.getElementById('om-order-info').value,
     tracking_id:  document.getElementById('om-tracking').value.trim(),
     notes:        document.getElementById('om-notes').value.trim(),
     first_name:   document.getElementById('om-fname').value.trim(),
@@ -498,6 +524,12 @@ async function saveOrder(){
     const r=await fetch(`${API}/admin/orders/${editingOrder}`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload)});
     const d=await r.json();if(!r.ok)throw new Error(d.error||(d.errors&&d.errors[0]?.msg)||'Update failed');
     alert.textContent='✅ Order updated successfully!';alert.className='alert success show';
+    
+    clearTimeout(window.__omAlertTimer);
+    window.__omAlertTimer = setTimeout(() => {
+      alert.classList.remove('show');
+    }, 4500);
+
     setTimeout(()=>{ closeModal('order-modal'); loadOrders(curPage); loadStats(); },900);
   }catch(e){alert.textContent='❌ '+e.message;alert.className='alert error show';}
 }

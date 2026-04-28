@@ -70,6 +70,7 @@ const createTables = async () => {
         order_id      VARCHAR(20)  UNIQUE NOT NULL,
         order_date    TIMESTAMP    DEFAULT NOW(),
         order_status  VARCHAR(30)  DEFAULT 'placed',
+        order_info    VARCHAR(25)  NOT NULL,
         agent_id      VARCHAR(50)  NOT NULL,
         agent_name    VARCHAR(100) NOT NULL,
         lead_source   VARCHAR(50)  NOT NULL,
@@ -95,6 +96,8 @@ const createTables = async () => {
     console.log('✅ Table: orders');
     await client.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(50) NOT NULL DEFAULT 'Pending';`);
     console.log('✅ Column: payment_mode');
+    await client.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_info VARCHAR(25) NOT NULL DEFAULT 'NewOrder';`);
+    console.log('✅ Column: order_info');
 
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_agent_id      ON orders(agent_id);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_order_date    ON orders(order_date);`);
@@ -102,6 +105,7 @@ const createTables = async () => {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_payment_mode  ON orders(payment_mode);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_order_status  ON orders(order_status);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_order_info ON orders(order_info);`);
 
     // order_items — multiple medicines per order
     await client.query(`
