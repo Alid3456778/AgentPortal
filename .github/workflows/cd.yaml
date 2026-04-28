@@ -24,5 +24,6 @@ jobs:
             git pull origin main
             cd backend
             npm install
+            node scripts/setupDatabase.js
             pm2 restart agentportal
             
