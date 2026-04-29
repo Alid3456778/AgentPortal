@@ -80,7 +80,7 @@
         </div>
         <div class="tw"><table>
           <thead><tr>
-            <th>Order ID</th><th>Date</th><th>Agent</th><th>Source</th>
+            <th>#</th><th>Order ID</th><th>Date</th><th>Agent</th><th>Source</th>
             <th>Customer</th><th>Items</th><th>Total</th><th>Tracking</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="otbody"><tr><td colspan="10"><div class="es"><div class="ico">⏳</div><p>Loading…</p></div></td></tr></tbody>
@@ -342,11 +342,13 @@ async function loadOrders(page=1){
 
     if(!d.orders.length){tbody.innerHTML='<tr><td colspan="10"><div class="es"><div class="ico">🔍</div><p>No orders found.</p></div></td></tr>';return;}
 
-    tbody.innerHTML=d.orders.map(o=>{
+    tbody.innerHTML=d.orders.map((o, index)=>{
       const items=parseItems(o.items);
       const itemHtml=items.map(i=>`<div class="ip">• ${i.product_name} ${i.quantity}×${i.mg}</div>`).join('');
       const total=calcOrderTotal(items);
+      const rowNum = (d.pagination.page - 1) * d.pagination.limit + index + 1;
       return `<tr>
+        <td style="color:var(--muted);font-size:11px">${rowNum}</td>
         <td><strong style="font-size:12px">${o.order_id}</strong></td>
         <td style="white-space:nowrap">${new Date(o.order_date).toLocaleDateString()}</td>
         <td><div style="font-weight:500">${o.agent_name}</div><div style="font-size:11px;color:var(--muted)">${o.agent_id}</div></td>
