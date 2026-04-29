@@ -33,7 +33,7 @@
       </div>
       <div class="fc">
         <div class="fr">
-          <div class="fg"><label>Agent Name</label><input id="f-agent" class="fi" placeholder="Search agent…"/></div>
+          <div class="fg"><label>Agent Name</label><input id="f-agent" class="fi" placeholder="Sear ch agent…" oninput="onAgentSearch(this.value)"/></div>
           <div class="fg"><label>Date From</label><input type="date" id="f-from" class="fi"/></div>
           <div class="fg"><label>Date To</label><input type="date" id="f-to" class="fi"/></div>
           <div class="fg"><label>Lead Source</label>
@@ -311,6 +311,12 @@ async function loadStats(){
 
 // ── Orders ─────────────────────────────────────────────────────────────────
 let curPage=1,totPages=1,editingOrder=null;
+let agentSearchTimer=null;
+
+function onAgentSearch(val){
+  clearTimeout(agentSearchTimer);
+  agentSearchTimer=setTimeout(()=>loadOrders(1),400);
+}
 
 function getFilters(extra={}){
   const p={
