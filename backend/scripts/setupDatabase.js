@@ -70,7 +70,7 @@ const createTables = async () => {
         order_id      VARCHAR(20)  UNIQUE NOT NULL,
         order_date    TIMESTAMP    DEFAULT NOW(),
         order_status  VARCHAR(30)  DEFAULT 'placed',
-        order_info    VARCHAR(25)  NOT NULL,
+        order_info    VARCHAR(30)  NOT NULL DEFAULT 'New',
         agent_id      VARCHAR(50)  NOT NULL,
         agent_name    VARCHAR(100) NOT NULL,
         lead_source   VARCHAR(50)  NOT NULL,
@@ -96,7 +96,7 @@ const createTables = async () => {
     console.log('✅ Table: orders');
     await client.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(50) NOT NULL DEFAULT 'Pending';`);
     console.log('✅ Column: payment_mode');
-    await client.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_info VARCHAR(25) NOT NULL DEFAULT 'NewOrder';`);
+    await client.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_info VARCHAR(30) NOT NULL DEFAULT 'New';`);
     console.log('✅ Column: order_info');
 
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_agent_id      ON orders(agent_id);`);
