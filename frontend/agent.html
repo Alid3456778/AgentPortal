@@ -162,9 +162,9 @@
               <label>Order Info <span class="req">*</span></label>
               <select id="order_info" onchange="onOrderInfoChange()">
                 <option value="">— Select Order Info —</option>
-                <option value="ReOrder">Re-Order</option>
-                <option value="NewOrder">New Order</option>
-                <option value="RepeatOrder">Repeat Order</option>
+                <option value="Re-order">Re-order</option>
+                <option value="New">New</option>
+                <option value="Repeat">Repeat</option>
               </select>
               <span class="fe" id="e-order_info"></span>
               <input id="order_info_other" placeholder="Enter custom order info" style="display: none; margin-top: 6px;" />
@@ -207,7 +207,7 @@
       }
       document.getElementById("agn").textContent = user.name;
 
-      const MEDICINES = [
+      const MEDICINES_FALLBACK = [
         { name: "Clonazepam-Rivotril Usa To Usa 2Mg" },
         { name: "Diazepam-Dizepam-10 Usa To Usa 10MG" },
         { name: "Armodafinil Usa To Usa 150MG" },
@@ -238,6 +238,17 @@
         { name: "Alprazolam-Rlam USA to USA 1MG" }
 
       ];
+
+      let MEDICINES = MEDICINES_FALLBACK;
+      (async function loadMedicines(){
+        try{
+          const r = await fetch('./data/medicines.json');
+          if(r.ok){
+            const d = await r.json();
+            if(Array.isArray(d)) MEDICINES = d;
+          }
+        }catch(e){}
+      })();
 
       function logout() {
         localStorage.clear();

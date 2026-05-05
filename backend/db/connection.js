@@ -2,7 +2,8 @@
 // PostgreSQL connection pool using 'pg' library
 
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -13,6 +14,12 @@ const pool = new Pool({
   max: 20,                  // max connections in pool
   idleTimeoutMillis: 30000, // close idle clients after 30s
   connectionTimeoutMillis: 2000,
+});
+
+// Ensure server-side timestamps are generated in US time (Eastern).
+// This affects NOW()/CURRENT_TIMESTAMP and timestamp parsing for date filters.
+pool.on('connect', (client) => {
+  client.query(`SET TIME ZONE 'America/New_York';`).catch(() => {});
 });
 
 // Test connection on startup

@@ -37,11 +37,14 @@ const createTables = async () => {
         id          SERIAL PRIMARY KEY,
         admin_name  VARCHAR(100) NOT NULL,
         admin_id    VARCHAR(50)  UNIQUE NOT NULL,
+        email       VARCHAR(150),
         password    TEXT         NOT NULL,
         created_at  TIMESTAMP    DEFAULT NOW()
       );
     `);
     console.log('✅ Table: admins');
+    await client.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS email VARCHAR(150);`);
+    console.log('✅ Column: admins.email');
 
     // customers — uniquely identified by phone
     await client.query(`
@@ -121,6 +124,22 @@ const createTables = async () => {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);`);
     console.log('✅ Table: order_items');
+
+    // admin_password_resets — OTP flow for admin forgot-password
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS admin_password_resets (
+        id          SERIAL PRIMARY KEY,
+        admin_ref   INTEGER NOT NULL,
+        otp_hash    TEXT    NOT NULL,
+        expires_at  TIMESTAMP NOT NULL,
+        used_at     TIMESTAMP,
+        created_at  TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT fk_admin_reset_admin FOREIGN KEY (admin_ref) REFERENCES admins(id) ON DELETE CASCADE
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_admin_password_resets_admin_ref ON admin_password_resets(admin_ref);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_admin_password_resets_expires_at ON admin_password_resets(expires_at);`);
+    console.log('✅ Table: admin_password_resets');
 
     // auto update_at triggers
     await client.query(`

@@ -33,7 +33,7 @@
       </div>
       <div class="fc">
         <div class="fr">
-          <div class="fg"><label>Agent Name</label><input id="f-agent" class="fi" placeholder="Sear ch agent…" oninput="onAgentSearch(this.value)"/></div>
+          <div class="fg"><label>Agent Name</label><input id="f-agent" class="fi" placeholder="Search agent…" oninput="onAgentSearch(this.value)"/></div>
           <div class="fg"><label>Date From</label><input type="date" id="f-from" class="fi"/></div>
           <div class="fg"><label>Date To</label><input type="date" id="f-to" class="fi"/></div>
           <div class="fg"><label>Lead Source</label>
@@ -163,9 +163,9 @@
         <label>Order Info</label>
         <select id="om-order-info" >
           <option value="">— Select Order Info —</option>
-          <option value="ReOrder">Re-Order</option>
-          <option value="NewOrder">New Order</option>
-          <option value="RepeatOrder">Repeat Order</option>
+          <option value="Re-order">Re-order</option>
+          <option value="New">New</option>
+          <option value="Repeat">Repeat</option>
         </select>
       </div>
       <div class="mfg"><label>Tracking ID</label><input id="om-tracking" placeholder="Optional"/></div>
@@ -299,7 +299,8 @@ function showPage(name, btn){
 // ── Stats ─────────────────────────────────────────────────────────────────
 async function loadStats(){
   try{
-    const r=await fetch(`${API}/admin/stats`,{headers:{Authorization:`Bearer ${token}`}});
+    const qs=getFilters();
+    const r=await fetch(`${API}/admin/stats${qs?`?${qs}`:''}`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
     document.getElementById('s-orders').textContent=d.total_orders?.toLocaleString()||'0';
     document.getElementById('s-rev').textContent='$'+(d.total_revenue||0).toLocaleString('en-IN',{maximumFractionDigits:0});
@@ -356,7 +357,7 @@ async function loadOrders(page=1){
       return `<tr>
         <td style="color:var(--muted);font-size:11px">${rowNum}</td>
         <td><strong style="font-size:12px">${o.order_id}</strong></td>
-        <td style="white-space:nowrap">${new Date(o.order_date).toLocaleDateString()}</td>
+        <td style="white-space:nowrap">${new Date(o.order_date).toLocaleDateString('en-US',{timeZone:'America/New_York'})}</td>
         <td><div style="font-weight:500">${o.agent_name}</div><div style="font-size:11px;color:var(--muted)">${o.agent_id}</div></td>
         <td><span class="src-bdg">${o.lead_source}</span></td>
         <td><div>${o.first_name} ${o.last_name}</div><div style="font-size:11px;color:var(--muted)">${o.phone}</div></td>
@@ -372,6 +373,9 @@ async function loadOrders(page=1){
         </td>
       </tr>`;
     }).join('');
+
+    // Keep dashboard stats in sync with current filters.
+    loadStats();
   }catch(e){
     tbody.innerHTML=`<tr><td colspan="10"><div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div></td></tr>`;
   }

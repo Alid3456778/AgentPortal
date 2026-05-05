@@ -37,11 +37,66 @@
         <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
       </div>
 
+      <div class="fp-row" id="fp-row" style="display:none">
+        <button class="link-btn" type="button" onclick="openForgot()">Forgot password?</button>
+      </div>
+
       <button class="btn-login" id="login-btn" onclick="doLogin()">
         <span id="btn-text">Sign In</span>
         <div class="spinner" id="spinner"></div>
       </button>
 
+    </div>
+  </div>
+
+  <!-- Admin Forgot Password Modal -->
+  <div class="overlay" id="fp-modal" style="display:none">
+    <div class="modal">
+      <div class="mhead">
+        <div>
+          <div class="mtitle">Reset Admin Login</div>
+          <div class="msub">Verify OTP to update Admin ID and password.</div>
+        </div>
+        <button class="xbtn" onclick="closeForgot()">×</button>
+      </div>
+
+      <div class="mgrid">
+        <div class="form-group">
+          <label>Current Admin ID</label>
+          <input type="text" id="fp-admin-id" placeholder="e.g. admin001" />
+        </div>
+        <div class="form-group">
+          <label>Registered Email</label>
+          <input type="email" id="fp-email" placeholder="your@email.com" />
+        </div>
+      </div>
+
+      <button class="btn-login" id="fp-send-btn" onclick="sendOtp()" style="margin-top:8px">
+        <span id="fp-send-text">Send OTP</span>
+        <div class="spinner" id="fp-send-spin"></div>
+      </button>
+
+      <div class="dv"></div>
+
+      <div class="mgrid">
+        <div class="form-group">
+          <label>OTP</label>
+          <input type="text" id="fp-otp" placeholder="6-digit code" inputmode="numeric" maxlength="6" />
+        </div>
+        <div class="form-group">
+          <label>New Admin ID (optional)</label>
+          <input type="text" id="fp-new-admin-id" placeholder="e.g. admin002" />
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="fp-new-pass" placeholder="Min 6 chars" />
+        </div>
+      </div>
+
+      <button class="btn-login" id="fp-reset-btn" onclick="resetAdmin()" style="margin-top:8px">
+        <span id="fp-reset-text">Verify & Update</span>
+        <div class="spinner" id="fp-reset-spin"></div>
+      </button>
     </div>
   </div>
 
@@ -57,6 +112,7 @@
       btn.classList.add('active');
       document.getElementById('id-label').textContent = role === 'agent' ? 'Agent ID' : 'Admin ID';
       document.getElementById('login-id').placeholder  = role === 'agent' ? 'e.g. AGT001' : 'e.g. admin001';
+      document.getElementById('fp-row').style.display = role === 'admin' ? 'flex' : 'none';
       hideAlert();
     }
 
@@ -118,6 +174,79 @@
         showAlert(err.message, 'error');
       } finally {
         setLoading(false);
+      }
+    }
+
+    function openForgot(){
+      hideAlert();
+      if(currentRole!=='admin') return;
+      document.getElementById('fp-modal').style.display='flex';
+      // Prefill admin id from login box if present
+      const cur=document.getElementById('login-id').value.trim();
+      if(cur) document.getElementById('fp-admin-id').value=cur;
+    }
+    function closeForgot(){
+      document.getElementById('fp-modal').style.display='none';
+      ['fp-otp','fp-new-admin-id','fp-new-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    }
+
+    function setBtnLoading(btnId, textId, spinId, loading, textWhenIdle){
+      const btn=document.getElementById(btnId);
+      const text=document.getElementById(textId);
+      const spin=document.getElementById(spinId);
+      btn.disabled=loading;
+      text.style.display=loading?'none':'inline';
+      spin.style.display=loading?'block':'none';
+      if(!loading && textWhenIdle) text.textContent=textWhenIdle;
+    }
+
+    async function sendOtp(){
+      const admin_id=document.getElementById('fp-admin-id').value.trim();
+      const email=document.getElementById('fp-email').value.trim();
+      if(!admin_id || !email) return showAlert('Enter Admin ID and Email.', 'error');
+
+      setBtnLoading('fp-send-btn','fp-send-text','fp-send-spin',true);
+      try{
+        const res=await fetch(`${API_BASE}/auth/admin/forgot-password`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({admin_id,email}),
+        });
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error || data.errors?.[0]?.msg || 'Failed');
+        showAlert('OTP sent. Check your email.', 'success');
+      }catch(e){
+        showAlert(e.message, 'error');
+      }finally{
+        setBtnLoading('fp-send-btn','fp-send-text','fp-send-spin',false,'Send OTP');
+      }
+    }
+
+    async function resetAdmin(){
+      const admin_id=document.getElementById('fp-admin-id').value.trim();
+      const email=document.getElementById('fp-email').value.trim();
+      const otp=document.getElementById('fp-otp').value.trim();
+      const new_admin_id=document.getElementById('fp-new-admin-id').value.trim();
+      const new_password=document.getElementById('fp-new-pass').value;
+      if(!admin_id || !email || !otp || !new_password) return showAlert('Fill Admin ID, Email, OTP and New Password.', 'error');
+
+      setBtnLoading('fp-reset-btn','fp-reset-text','fp-reset-spin',true);
+      try{
+        const res=await fetch(`${API_BASE}/auth/admin/reset-password`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({admin_id,email,otp,new_password,new_admin_id:new_admin_id||undefined}),
+        });
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error || data.errors?.[0]?.msg || 'Failed');
+        showAlert('Updated. You can sign in now.', 'success');
+        closeForgot();
+        // Update login box with new admin id if changed
+        document.getElementById('login-id').value=data.admin_id || admin_id;
+      }catch(e){
+        showAlert(e.message, 'error');
+      }finally{
+        setBtnLoading('fp-reset-btn','fp-reset-text','fp-reset-spin',false,'Verify & Update');
       }
     }
 

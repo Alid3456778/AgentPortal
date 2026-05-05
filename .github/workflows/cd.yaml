@@ -23,6 +23,8 @@ jobs:
             cd apps/AgentPortal
             git pull origin main
             cd backend
+            node scripts/setupDatabase.js
+            node scripts/seedAdmin.js
             npm install
             pm2 restart agentportal
             

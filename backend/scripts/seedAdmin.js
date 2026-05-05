@@ -22,16 +22,18 @@ const seed = async () => {
     const adminId       = process.env.ADMIN_ID       ;
     const adminName     = process.env.ADMIN_NAME     ;
     const adminPassword = process.env.ADMIN_PASSWORD ;
+    const adminEmail    = process.env.ADMIN_EMAIL    ;
 
     const hashedAdminPass = await bcrypt.hash(adminPassword, 12);
 
     await client.query(`
-      INSERT INTO admins (admin_name, admin_id, password)
-      VALUES ($1, $2, $3)
+      INSERT INTO admins (admin_name, admin_id, email, password)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (admin_id) DO UPDATE
         SET admin_name = EXCLUDED.admin_name,
+            email      = EXCLUDED.email,
             password   = EXCLUDED.password;
-    `, [adminName, adminId, hashedAdminPass]);
+    `, [adminName, adminId, adminEmail || null, hashedAdminPass]);
     console.log(`✅ Admin created → ID: ${adminId} | Password: ${adminPassword}`);
 
     console.log('\n🎉 Seeding complete!');
