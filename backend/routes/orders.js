@@ -150,14 +150,15 @@ router.get('/mine', verifyToken, agentOnly, async (req, res) => {
                ) AS items
         FROM orders o
         LEFT JOIN order_items i ON i.order_id = o.order_id
-        WHERE o.agent_id=$1
+	        WHERE o.agent_id=$1
+	          AND o.created_at >= NOW() - INTERVAL '24 hours'
         GROUP BY o.id, o.order_id, o.order_date, o.order_status, o.lead_source,
                  o.first_name, o.last_name, o.phone, o.email, o.tracking_id, o.notes, o.created_at
         ORDER BY o.order_date DESC
         LIMIT $2 OFFSET $3;
       `, [agent_id, parseInt(limit), offset]),
-      query('SELECT COUNT(*) FROM orders WHERE agent_id=$1', [agent_id]),
-    ]);
+	      query(`SELECT COUNT(*) FROM orders WHERE agent_id=$1 AND created_at >= NOW() - INTERVAL '24 hours'`, [agent_id]),
+	    ]);
 
     return res.json({
       orders: ordersRes.rows,

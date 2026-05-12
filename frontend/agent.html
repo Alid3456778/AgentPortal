@@ -9,22 +9,36 @@
       href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./css/agent.css">
-	  </head>
-	  <body>
-	    <nav>
+    <link rel="stylesheet" href="./css/agent.css" />
+  </head>
+  <body>
+    <nav>
       <div class="nb">
         <div class="ni">📦</div>
         <span class="nt">PayerPortal</span>
       </div>
       <div class="nr">
+        <div class="tabs">
+          <button class="tb active" onclick="showTab('form', this)">
+            New Order
+          </button>
+          <button
+            class="tb"
+            onclick="
+              showTab('orders', this);
+              loadOrders();
+            "
+          >
+            My Orders
+          </button>
+        </div>
         <span class="nu">Agent: <strong id="agn">—</strong></span>
-	        <button class="btn-sm bg" onclick="logout()">Sign Out</button>
-	      </div>
-	    </nav>
-	    <div class="alert" id="fa"></div>
-	    <main>
-	      <div id="form-section">
+        <button class="btn-sm bg" onclick="logout()">Sign Out</button>
+      </div>
+    </nav>
+    <div class="alert" id="fa"></div>
+    <main>
+      <div id="form-section">
         <div class="ph">
           <h1>Submit New Order</h1>
           <p>
@@ -37,45 +51,33 @@
           <div class="g2">
             <div class="fg">
               <label>First Name <span class="req">*</span></label
-              ><input id="first_name"  /><span
+              ><input id="first_name" /><span
                 class="fe"
                 id="e-first_name"
               ></span>
             </div>
             <div class="fg">
               <label>Last Name <span class="req">*</span></label
-              ><input id="last_name" /><span
-                class="fe"
-                id="e-last_name"
-              ></span>
+              ><input id="last_name" /><span class="fe" id="e-last_name"></span>
             </div>
             <div class="fg cs2">
               <label>Street Address <span class="req">*</span></label
-              ><input id="street_address"  /><span
+              ><input id="street_address" /><span
                 class="fe"
                 id="e-street_address"
               ></span>
             </div>
             <div class="fg">
               <label>City <span class="req">*</span></label
-              ><input id="city"  /><span
-                class="fe"
-                id="e-city"
-              ></span>
+              ><input id="city" /><span class="fe" id="e-city"></span>
             </div>
             <div class="fg">
               <label>State <span class="req">*</span></label
-              ><input id="state"  /><span
-                class="fe"
-                id="e-state"
-              ></span>
+              ><input id="state" /><span class="fe" id="e-state"></span>
             </div>
             <div class="fg">
               <label>Pincode <span class="req">*</span></label
-              ><input id="pincode"  /><span
-                class="fe"
-                id="e-pincode"
-              ></span>
+              ><input id="pincode" /><span class="fe" id="e-pincode"></span>
             </div>
             <div class="fg">
               <label>Country <span class="req">*</span></label
@@ -86,18 +88,17 @@
             </div>
             <div class="fg">
               <label>Phone <span class="req">*</span></label
-              ><input
-                id="phone"
-                type="tel"
-                
-              /><span class="fe" id="e-phone"></span>
+              ><input id="phone" type="tel" /><span
+                class="fe"
+                id="e-phone"
+              ></span>
             </div>
             <div class="fg">
               <label>Email <span class="req">*</span></label
-              ><input
-                id="email"
-                type="email"
-              /><span class="fe" id="e-email"></span>
+              ><input id="email" type="email" /><span
+                class="fe"
+                id="e-email"
+              ></span>
             </div>
           </div>
 
@@ -156,7 +157,11 @@
                 <option value="Other">Other</option>
               </select>
               <span class="fe" id="e-payment_mode"></span>
-              <input id="payment_mode_other" placeholder="Enter custom payment mode" style="display: none; margin-top: 6px;" />
+              <input
+                id="payment_mode_other"
+                placeholder="Enter custom payment mode"
+                style="display: none; margin-top: 6px"
+              />
             </div>
             <div class="fg">
               <label>Order Info <span class="req">*</span></label>
@@ -167,7 +172,11 @@
                 <option value="Repeat">Repeat</option>
               </select>
               <span class="fe" id="e-order_info"></span>
-              <input id="order_info_other" placeholder="Enter custom order info" style="display: none; margin-top: 6px;" />
+              <input
+                id="order_info_other"
+                placeholder="Enter custom order info"
+                style="display: none; margin-top: 6px"
+              />
             </div>
             <div class="fg">
               <label
@@ -194,9 +203,12 @@
             </button>
             <button class="btn-sm bg" onclick="reset()">Clear</button>
           </div>
-	        </div>
-	      </div>
-
+        </div>
+      </div>
+      <div id="orders-section" style="display: none">
+	    <div class="ph"><h1>My Orders</h1><p>Orders you submitted in the last 24 hours.</p></div>
+    <div class="card"><div id="oc"><div class="es"><div class="ic">⏳</div><p>Loading…</p></div></div></div>
+      </div>
     </main>
     <script>
       const API = window.location.origin + "/api";
@@ -235,20 +247,78 @@
         { name: "Zopiclone USA to USA 10MG" },
         { name: "Xanax Bars Green USA to USA 2MG" },
         { name: "Cialis USA to USA 20MG" },
-        { name: "Alprazolam-Rlam USA to USA 1MG" }
-
+        { name: "Alprazolam-Rlam USA to USA 1MG" },
       ];
 
       let MEDICINES = MEDICINES_FALLBACK;
-      (async function loadMedicines(){
-        try{
-          const r = await fetch('./data/medicines.json');
-          if(r.ok){
+      (async function loadMedicines() {
+        try {
+          const r = await fetch("./data/medicines.json");
+          if (r.ok) {
             const d = await r.json();
-            if(Array.isArray(d)) MEDICINES = d;
+            if (Array.isArray(d)) MEDICINES = d;
           }
-        }catch(e){}
+        } catch (e) {}
       })();
+
+      async function loadOrders() {
+        const oc = document.getElementById("oc");
+        oc.innerHTML =
+          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
+        try {
+          const res = await fetch(`${API}/orders/mine`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          if (!data.orders.length) {
+            oc.innerHTML =
+              '<div class="es"><div class="ic">📋</div><p>No orders yet.</p></div>';
+            return;
+          }
+
+          const rows = data.orders
+            .map((o) => {
+              const items = (o.items || [])
+                .map(
+                  (i) =>
+                    `<div class="ip">• ${i.product_name} — ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</div>`,
+                )
+                .join("");
+              const total = (o.items || []).reduce(
+                (s, i) => s + parseFloat(i.cost) * i.quantity,
+                0,
+              );
+              return `<tr>
+        <td><strong style="font-size:12px">${o.order_id}</strong><br/><span style="font-size:11px;color:var(--muted)">${new Date(o.order_date).toLocaleDateString()}</span></td>
+        <td>${o.first_name} ${o.last_name}<br/><span style="font-size:11px;color:var(--muted)">${o.phone}</span></td>
+        <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: ₹${total.toFixed(2)}</div></td>
+        <td style="font-size:12px">${o.lead_source}</td>
+        <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
+        <td>${o.tracking_id ? `<code style="font-size:11px">${o.tracking_id}</code>` : `<button class="te" onclick="updTrack('${o.order_id}',this)">+ Add</button>`}</td>
+      </tr>`;
+            })
+            .join("");
+          oc.innerHTML = `<div style="font-size:13px;color:var(--muted);margin-bottom:14px"><strong style="color:var(--text)">${data.pagination.total}</strong> order(s)</div>
+      <div class="tw"><table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Source</th><th>Status</th><th>Tracking</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+        } catch (e) {
+          oc.innerHTML = `<div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div>`;
+        }
+      }
+
+      function showTab(t, btn) {
+        document
+          .querySelectorAll(".tb")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("form-section").style.display =
+          t === "form" ? "block" : "none";
+        document.getElementById("orders-section").style.display =
+          t === "orders" ? "block" : "none";
+      }
 
       function logout() {
         localStorage.clear();
@@ -260,11 +330,13 @@
       }
       function onPaymentModeChange() {
         const v = document.getElementById("payment_mode").value;
-        document.getElementById("payment_mode_other").style.display = v === "Other" ? "block" : "none";
+        document.getElementById("payment_mode_other").style.display =
+          v === "Other" ? "block" : "none";
       }
-       function onOrderInfoChange() {
+      function onOrderInfoChange() {
         const v = document.getElementById("order_info").value;
-        document.getElementById("order_info_other").style.display = v === "Other" ? "block" : "none";
+        document.getElementById("order_info_other").style.display =
+          v === "Other" ? "block" : "none";
       }
 
       let ic = 0;
@@ -295,10 +367,12 @@
         container.innerHTML = "";
         if (!val) return;
 
-        const matches = MEDICINES.filter(m => m.name.toLowerCase().includes(val));
+        const matches = MEDICINES.filter((m) =>
+          m.name.toLowerCase().includes(val),
+        );
         if (matches.length === 0) return;
 
-        matches.forEach(m => {
+        matches.forEach((m) => {
           const div = document.createElement("div");
           div.className = "suggestion-item";
           div.textContent = m.name;
@@ -313,7 +387,9 @@
 
       document.addEventListener("click", (e) => {
         if (!e.target.classList.contains("ip")) {
-          document.querySelectorAll(".suggestions").forEach(s => s.innerHTML = "");
+          document
+            .querySelectorAll(".suggestions")
+            .forEach((s) => (s.innerHTML = ""));
         }
       });
 
@@ -327,8 +403,7 @@
         if (!el) return;
         const c = parseFloat(el.querySelector(".ic").value) || 0;
         const t = document.getElementById("it" + n);
-        t.textContent = 
-          c > 0 ? `Line total: $${c.toFixed(2)}` : "";
+        t.textContent = c > 0 ? `Line total: $${c.toFixed(2)}` : "";
       }
       function getItems() {
         return Array.from(document.querySelectorAll(".mi")).map((el) => ({
@@ -391,10 +466,10 @@
         document.getElementById("payment_mode_other").style.display = "none";
         document.getElementById("il").innerHTML = "";
         ic = 0;
-	        addItem();
-	        clearErrs();
-	        document.getElementById("ehint").style.display = "none";
-	      }
+        addItem();
+        clearErrs();
+        document.getElementById("ehint").style.display = "none";
+      }
 
       async function submitOrder() {
         clearErrs();
@@ -412,8 +487,14 @@
           phone: document.getElementById("phone").value.trim(),
           email: document.getElementById("email").value.trim(),
           lead_source: document.getElementById("lead_source").value,
-          payment_mode: document.getElementById("payment_mode").value === "Other" ? document.getElementById("payment_mode_other").value.trim() : document.getElementById("payment_mode").value,
-          order_info: document.getElementById("order_info").value === "Other" ? document.getElementById("order_info_other").value.trim() : document.getElementById("order_info").value,
+          payment_mode:
+            document.getElementById("payment_mode").value === "Other"
+              ? document.getElementById("payment_mode_other").value.trim()
+              : document.getElementById("payment_mode").value,
+          order_info:
+            document.getElementById("order_info").value === "Other"
+              ? document.getElementById("order_info_other").value.trim()
+              : document.getElementById("order_info").value,
           tracking_id: document.getElementById("tracking_id").value.trim(),
           notes: document.getElementById("notes").value.trim(),
           items: getItems(),
@@ -480,7 +561,7 @@
           }
           showAlert(
             `✅ Order <strong>${data.order.order_id}</strong> submitted with ${f.items.length} item(s). Confirmation email queued.`,
-            'success',
+            "success",
           );
           reset();
         } catch (e) {
