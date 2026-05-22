@@ -178,18 +178,10 @@
                 style="display: none; margin-top: 6px"
               />
             </div>
-            <div class="fg">
-              <label
-                >Tracking ID
-                <span style="color: var(--muted); font-weight: 400"
-                  >(optional)</span
-                ></label
-              ><input id="tracking_id" placeholder="Can add later" />
-            </div>
-            <div class="fg cs2">
-              <label
-                >Notes
-                <span style="color: var(--muted); font-weight: 400"
+	            <div class="fg cs2">
+	              <label
+	                >Notes
+	                <span style="color: var(--muted); font-weight: 400"
                   >(optional)</span
                 ></label
               ><input id="notes" placeholder="Any notes…" />
@@ -206,7 +198,7 @@
         </div>
       </div>
       <div id="orders-section" style="display: none">
-	    <div class="ph"><h1>My Orders</h1><p>Orders you submitted in the last 24 hours.</p></div>
+	    <div class="ph"><h1>My Orders</h1><p>Orders waiting for tracking ID.</p></div>
     <div class="card"><div id="oc"><div class="es"><div class="ic">⏳</div><p>Loading…</p></div></div></div>
       </div>
     </main>
@@ -261,10 +253,10 @@
         } catch (e) {}
       })();
 
-      async function loadOrders() {
-        const oc = document.getElementById("oc");
-        oc.innerHTML =
-          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
+	      async function loadOrders() {
+	        const oc = document.getElementById("oc");
+	        oc.innerHTML =
+	          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
         try {
           const res = await fetch(`${API}/orders/mine`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -273,7 +265,7 @@
           if (!res.ok) throw new Error(data.error);
           if (!data.orders.length) {
             oc.innerHTML =
-              '<div class="es"><div class="ic">📋</div><p>No orders yet.</p></div>';
+              '<div class="es"><div class="ic">📋</div><p>No orders pending tracking.</p></div>';
             return;
           }
 
@@ -307,9 +299,77 @@
         } catch (e) {
           oc.innerHTML = `<div class="es"><p style="color:var(--error)">Error: ${e.message}</p></div>`;
         }
-      }
+	      }
 
-      function showTab(t, btn) {
+	      async function updTrack(orderId, el) {
+	        if (!orderId || !el) return;
+	        const td = el.closest ? el.closest("td") : null;
+	        if (!td) return;
+
+	        const prev = td.innerHTML;
+	        td.innerHTML = `
+	          <div style="display:flex;gap:8px;align-items:center">
+	            <input id="trk_${orderId}" placeholder="Enter tracking ID" style="max-width:180px;padding:8px 10px;font-size:12px" />
+	            <button class="te" onclick="saveTrack('${orderId}', this)">Save</button>
+	            <button class="te" style="opacity:.7" onclick="cancelTrack(this)">Cancel</button>
+	          </div>
+	        `;
+	        td.dataset.prev = prev;
+	        setTimeout(() => {
+	          const i = document.getElementById(`trk_${orderId}`);
+	          if (i) i.focus();
+	        }, 0);
+	      }
+
+	      function cancelTrack(btn) {
+	        const td = btn && btn.closest ? btn.closest("td") : null;
+	        if (!td) return;
+	        td.innerHTML = td.dataset.prev || "";
+	        delete td.dataset.prev;
+	      }
+
+	      async function saveTrack(orderId, btn) {
+	        const td = btn && btn.closest ? btn.closest("td") : null;
+	        const inp = document.getElementById(`trk_${orderId}`);
+	        const tracking_id = inp ? inp.value.trim() : "";
+	        if (!td) return;
+	        if (!tracking_id) {
+	          showAlert("Tracking ID is required.", "error");
+	          return;
+	        }
+
+	        btn.disabled = true;
+	        btn.textContent = "Saving...";
+	        try {
+	          const res = await fetch(`${API}/orders/${orderId}/tracking`, {
+	            method: "PUT",
+	            headers: {
+	              "Content-Type": "application/json",
+	              Authorization: `Bearer ${token}`,
+	            },
+	            body: JSON.stringify({ tracking_id }),
+	          });
+	          const data = await res.json();
+	          if (!res.ok) {
+	            const msg =
+	              (data && data.error) ||
+	              (data && data.errors && data.errors[0] && data.errors[0].msg) ||
+	              "Failed to update tracking.";
+	            throw new Error(msg);
+	          }
+
+	          const tr = td.closest ? td.closest("tr") : null;
+	          if (tr) tr.remove();
+	          const tbody = document.querySelector("#oc table tbody");
+	          if (!tbody || !tbody.children.length) loadOrders();
+	        } catch (e) {
+	          btn.disabled = false;
+	          btn.textContent = "Save";
+	          showAlert(e.message || "Failed to update tracking.", "error");
+	        }
+	      }
+
+	      function showTab(t, btn) {
         document
           .querySelectorAll(".tb")
           .forEach((b) => b.classList.remove("active"));
@@ -444,22 +504,21 @@
         if (inp) inp.classList.add("ef");
       }
       function reset() {
-        [
-          "first_name",
-          "last_name",
-          "street_address",
-          "city",
-          "state",
-          "pincode",
-          "country",
-          "phone",
-          "email",
-          "tracking_id",
-          "notes",
-        ].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.value = id === "country" ? "India" : "";
-        });
+	        [
+	          "first_name",
+	          "last_name",
+	          "street_address",
+	          "city",
+	          "state",
+	          "pincode",
+	          "country",
+	          "phone",
+	          "email",
+	          "notes",
+	        ].forEach((id) => {
+	          const el = document.getElementById(id);
+	          if (el) el.value = id === "country" ? "India" : "";
+	        });
         document.getElementById("lead_source").value = "";
         document.getElementById("payment_mode").value = "";
         document.getElementById("payment_mode_other").value = "";
@@ -491,14 +550,13 @@
             document.getElementById("payment_mode").value === "Other"
               ? document.getElementById("payment_mode_other").value.trim()
               : document.getElementById("payment_mode").value,
-          order_info:
-            document.getElementById("order_info").value === "Other"
-              ? document.getElementById("order_info_other").value.trim()
-              : document.getElementById("order_info").value,
-          tracking_id: document.getElementById("tracking_id").value.trim(),
-          notes: document.getElementById("notes").value.trim(),
-          items: getItems(),
-        };
+	          order_info:
+	            document.getElementById("order_info").value === "Other"
+	              ? document.getElementById("order_info_other").value.trim()
+	              : document.getElementById("order_info").value,
+	          notes: document.getElementById("notes").value.trim(),
+	          items: getItems(),
+	        };
 
         let err = false;
         [

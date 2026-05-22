@@ -3,7 +3,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { query } = require('../db/connection');
 const { verifyToken, agentOnly } = require('../middleware/auth');
-const { sendOrderConfirmation } = require('../services/emailService');
+const { sendOrderConfirmation, sendTrackingUpdate } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -151,13 +151,13 @@ router.get('/mine', verifyToken, agentOnly, async (req, res) => {
         FROM orders o
         LEFT JOIN order_items i ON i.order_id = o.order_id
 	        WHERE o.agent_id=$1
-	          AND o.created_at >= NOW() - INTERVAL '24 hours'
+	          AND (o.tracking_id IS NULL OR o.tracking_id = '')
         GROUP BY o.id, o.order_id, o.order_date, o.order_status, o.lead_source,
                  o.first_name, o.last_name, o.phone, o.email, o.tracking_id, o.notes, o.created_at
         ORDER BY o.order_date DESC
         LIMIT $2 OFFSET $3;
       `, [agent_id, parseInt(limit), offset]),
-	      query(`SELECT COUNT(*) FROM orders WHERE agent_id=$1 AND created_at >= NOW() - INTERVAL '24 hours'`, [agent_id]),
+	      query(`SELECT COUNT(*) FROM orders WHERE agent_id=$1 AND (tracking_id IS NULL OR tracking_id = '')`, [agent_id]),
 	    ]);
 
     return res.json({
@@ -195,6 +195,22 @@ router.put('/:order_id/tracking', verifyToken, agentOnly, [
 
     if (result.rows.length === 0)
       return res.status(404).json({ error: 'Order not found or access denied.' });
+
+    // Fire-and-forget email to customer (uses lead source SMTP like order confirmation)
+    try {
+      const orderRes = await query(
+        `SELECT order_id, lead_source, email, first_name, last_name, tracking_id
+         FROM orders
+         WHERE order_id=$1 AND agent_id=$2
+         LIMIT 1;`,
+        [order_id, agent_id],
+      );
+      if (orderRes.rows.length) {
+        await sendTrackingUpdate(orderRes.rows[0]);
+      }
+    } catch (e) {
+      console.error('[EMAIL] Tracking send error:', e.message);
+    }
 
     return res.json({ message: 'Tracking ID updated.', order: result.rows[0] });
   } catch (err) {

@@ -181,4 +181,58 @@ const sendOrderConfirmation = async (order, items) => {
   }
 };
 
-module.exports = { sendOrderConfirmation };
+const buildTrackingEmail = (order) => {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+    <div style="background:linear-gradient(135deg,#4f7cff,#38bdf8);padding:32px 40px">
+      <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">Tracking Update</h1>
+      <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px">Order ID: <strong>${order.order_id}</strong></p>
+    </div>
+    <div style="padding:32px 40px">
+      <p style="font-size:15px;color:#374151">Dear <strong>${order.first_name} ${order.last_name}</strong>,</p>
+      <p style="font-size:14px;color:#6b7280;line-height:1.6">
+        Your tracking ID for order <strong>${order.order_id}</strong> is now available.
+      </p>
+      <div style="margin-top:18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px">
+        <p style="margin:0;font-size:14px;color:#166534">
+          🚚 <strong>Tracking ID:</strong> ${order.tracking_id}
+        </p>
+      </div>
+      <p style="font-size:13px;color:#9ca3af;margin-top:32px;border-top:1px solid #e5e7eb;padding-top:20px">
+        If you have any questions, please reply to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+const sendTrackingUpdate = async (order) => {
+  const transport = getTransporter(order.lead_source);
+
+  if (!transport) {
+    console.log(`[EMAIL] Skipped tracking â€” no SMTP config for lead source: ${order.lead_source}`);
+    return { sent: false, reason: 'No SMTP config' };
+  }
+
+  try {
+    const info = await transport.transporter.sendMail({
+      from: transport.from,
+      to: order.email,
+      subject: `Tracking ID for Order ${order.order_id}`,
+      html: buildTrackingEmail(order),
+    });
+    console.log(`[EMAIL] Tracking sent to ${order.email} via ${order.lead_source}: ${info.messageId}`);
+    return { sent: true, messageId: info.messageId };
+  } catch (err) {
+    console.error(`[EMAIL] Tracking failed for ${order.lead_source}:`, err.message);
+    return { sent: false, reason: err.message };
+  }
+};
+
+module.exports = { sendOrderConfirmation, sendTrackingUpdate };
