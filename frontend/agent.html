@@ -198,7 +198,10 @@
         </div>
       </div>
       <div id="orders-section" style="display: none">
-	    <div class="ph"><h1>My Orders</h1><p>Orders waiting for tracking ID.</p></div>
+		    <div class="ph">
+		      <h1>My Orders</h1>
+		      <p>All orders you have submitted.</p>
+		    </div>
     <div class="card"><div id="oc"><div class="es"><div class="ic">⏳</div><p>Loading…</p></div></div></div>
       </div>
     </main>
@@ -258,14 +261,15 @@
 	        oc.innerHTML =
 	          '<div class="es"><div class="ic">⏳</div><p>Loading…</p></div>';
         try {
-          const res = await fetch(`${API}/orders/mine`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+	          const qs = new URLSearchParams({ limit: "500" });
+	          const res = await fetch(`${API}/orders/mine?${qs.toString()}`, {
+	            headers: { Authorization: `Bearer ${token}` },
+	          });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error);
           if (!data.orders.length) {
             oc.innerHTML =
-              '<div class="es"><div class="ic">📋</div><p>No orders pending tracking.</p></div>';
+              '<div class="es"><div class="ic">📋</div><p>No orders yet.</p></div>';
             return;
           }
 
@@ -281,13 +285,19 @@
                 (s, i) => s + parseFloat(i.cost) * i.quantity,
                 0,
               );
-              return `<tr>
+	              const trackingCell = o.tracking_id
+	                ? `<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+	                     <code style="font-size:11px">${o.tracking_id}</code>
+	                     <button class="te" onclick="markDelivered('${o.order_id}', this)">Deliver</button>
+	                   </div>`
+	                : `<button class="te" onclick="updTrack('${o.order_id}',this)">+ Add</button>`;
+	              return `<tr>
         <td><strong style="font-size:12px">${o.order_id}</strong><br/><span style="font-size:11px;color:var(--muted)">${new Date(o.order_date).toLocaleDateString()}</span></td>
         <td>${o.first_name} ${o.last_name}<br/><span style="font-size:11px;color:var(--muted)">${o.phone}</span></td>
         <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: ₹${total.toFixed(2)}</div></td>
         <td style="font-size:12px">${o.lead_source}</td>
         <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
-        <td>${o.tracking_id ? `<code style="font-size:11px">${o.tracking_id}</code>` : `<button class="te" onclick="updTrack('${o.order_id}',this)">+ Add</button>`}</td>
+	        <td>${trackingCell}</td>
       </tr>`;
             })
             .join("");
@@ -359,9 +369,15 @@
 	          }
 
 	          const tr = td.closest ? td.closest("tr") : null;
-	          if (tr) tr.remove();
-	          const tbody = document.querySelector("#oc table tbody");
-	          if (!tbody || !tbody.children.length) loadOrders();
+	          const statusTd = tr ? tr.querySelector("td:nth-child(5) .bdg") : null;
+	          if (statusTd) {
+	            statusTd.textContent = "shipped";
+	            statusTd.className = "bdg shipped";
+	          }
+	          td.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+	            <code style="font-size:11px">${tracking_id}</code>
+	            <button class="te" onclick="markDelivered('${orderId}', this)">Deliver</button>
+	          </div>`;
 	        } catch (e) {
 	          btn.disabled = false;
 	          btn.textContent = "Save";
@@ -369,7 +385,33 @@
 	        }
 	      }
 
-	      function showTab(t, btn) {
+	      async function markDelivered(orderId, btn) {
+	        if (!orderId || !btn) return;
+	        const td = btn.closest ? btn.closest("td") : null;
+	        const tr = td && td.closest ? td.closest("tr") : null;
+
+	        btn.disabled = true;
+	        btn.textContent = "Sending...";
+	        try {
+	          const res = await fetch(`${API}/orders/${orderId}/delivered`, {
+	            method: "PUT",
+	            headers: { Authorization: `Bearer ${token}` },
+	          });
+	          const data = await res.json();
+	          if (!res.ok) throw new Error((data && data.error) || "Failed to mark delivered.");
+
+	          if (tr) tr.remove();
+	          const tbody = document.querySelector("#oc table tbody");
+	          if (!tbody || !tbody.children.length) loadOrders();
+	          showAlert("Delivery email sent and order marked delivered.", "success");
+	        } catch (e) {
+	          btn.disabled = false;
+	          btn.textContent = "Deliver";
+	          showAlert(e.message || "Failed to mark delivered.", "error");
+	        }
+	      }
+
+		      function showTab(t, btn) {
         document
           .querySelectorAll(".tb")
           .forEach((b) => b.classList.remove("active"));

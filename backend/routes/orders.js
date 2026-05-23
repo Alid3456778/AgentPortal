@@ -3,7 +3,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { query } = require('../db/connection');
 const { verifyToken, agentOnly } = require('../middleware/auth');
-const { sendOrderConfirmation, sendTrackingUpdate } = require('../services/emailService');
+const { sendOrderConfirmation, sendTrackingUpdate, sendDeliveryUpdate } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -133,6 +133,21 @@ router.get('/mine', verifyToken, agentOnly, async (req, res) => {
   const agent_id = req.user.login_id;
   const { page=1, limit=20 } = req.query;
   const offset = (parseInt(page)-1)*parseInt(limit);
+  const pending_tracking_raw = String(req.query.pending_tracking || '').toLowerCase();
+  const onlyPendingTracking =
+    pending_tracking_raw === '1' ||
+    pending_tracking_raw === 'true' ||
+    pending_tracking_raw === 'yes';
+
+  const pendingClauseOrders = onlyPendingTracking
+    ? "AND (o.tracking_id IS NULL OR o.tracking_id = '')"
+    : '';
+  const pendingClauseCount = onlyPendingTracking
+    ? "AND (tracking_id IS NULL OR tracking_id = '')"
+    : '';
+
+  const hideDeliveredClauseOrders = "AND o.order_status <> 'delivered'";
+  const hideDeliveredClauseCount = "AND order_status <> 'delivered'";
 
   try {
     const [ordersRes, countRes] = await Promise.all([
@@ -148,16 +163,20 @@ router.get('/mine', verifyToken, agentOnly, async (req, res) => {
                    'cost', i.cost
                  ) ORDER BY i.id), '[]'
                ) AS items
-        FROM orders o
-        LEFT JOIN order_items i ON i.order_id = o.order_id
+	        FROM orders o
+	        LEFT JOIN order_items i ON i.order_id = o.order_id
 	        WHERE o.agent_id=$1
-	          AND (o.tracking_id IS NULL OR o.tracking_id = '')
-        GROUP BY o.id, o.order_id, o.order_date, o.order_status, o.lead_source,
-                 o.first_name, o.last_name, o.phone, o.email, o.tracking_id, o.notes, o.created_at
-        ORDER BY o.order_date DESC
-        LIMIT $2 OFFSET $3;
-      `, [agent_id, parseInt(limit), offset]),
-	      query(`SELECT COUNT(*) FROM orders WHERE agent_id=$1 AND (tracking_id IS NULL OR tracking_id = '')`, [agent_id]),
+	          ${hideDeliveredClauseOrders}
+	          ${pendingClauseOrders}
+	        GROUP BY o.id, o.order_id, o.order_date, o.order_status, o.lead_source,
+	                 o.first_name, o.last_name, o.phone, o.email, o.tracking_id, o.notes, o.created_at
+	        ORDER BY o.order_date DESC
+	        LIMIT $2 OFFSET $3;
+	      `, [agent_id, parseInt(limit), offset]),
+	      query(
+	        `SELECT COUNT(*) FROM orders WHERE agent_id=$1 ${hideDeliveredClauseCount} ${pendingClauseCount}`,
+	        [agent_id],
+	      ),
 	    ]);
 
     return res.json({
@@ -188,7 +207,10 @@ router.put('/:order_id/tracking', verifyToken, agentOnly, [
 
   try {
     const result = await query(`
-      UPDATE orders SET tracking_id=$1, updated_at=NOW()
+      UPDATE orders
+      SET tracking_id=$1,
+          order_status=CASE WHEN order_status='delivered' THEN order_status ELSE 'shipped' END,
+          updated_at=NOW()
       WHERE order_id=$2 AND agent_id=$3
       RETURNING order_id, tracking_id, updated_at;
     `, [tracking_id, order_id, agent_id]);
@@ -216,6 +238,51 @@ router.put('/:order_id/tracking', verifyToken, agentOnly, [
   } catch (err) {
     console.error('[ORDERS] tracking error:', err.message);
     return res.status(500).json({ error: 'Failed to update tracking.' });
+  }
+});
+
+// ── PUT /api/orders/:order_id/delivered — Agent: mark delivered + email ────
+router.put('/:order_id/delivered', verifyToken, agentOnly, [
+  param('order_id').notEmpty(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { order_id } = req.params;
+  const agent_id = req.user.login_id;
+
+  try {
+    const result = await query(`
+      UPDATE orders
+      SET order_status='delivered', updated_at=NOW()
+      WHERE order_id=$1 AND agent_id=$2 AND tracking_id IS NOT NULL AND tracking_id <> ''
+      RETURNING order_id, order_status, updated_at;
+    `, [order_id, agent_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Order not found, access denied, or tracking ID missing.' });
+    }
+
+    // Fire-and-forget delivered email to customer
+    try {
+      const orderRes = await query(
+        `SELECT order_id, lead_source, email, first_name, last_name, tracking_id
+         FROM orders
+         WHERE order_id=$1 AND agent_id=$2
+         LIMIT 1;`,
+        [order_id, agent_id],
+      );
+      if (orderRes.rows.length) {
+        await sendDeliveryUpdate(orderRes.rows[0]);
+      }
+    } catch (e) {
+      console.error('[EMAIL] Delivered send error:', e.message);
+    }
+
+    return res.json({ message: 'Order marked as delivered.', order: result.rows[0] });
+  } catch (err) {
+    console.error('[ORDERS] delivered error:', err.message);
+    return res.status(500).json({ error: 'Failed to mark delivered.' });
   }
 });
 
