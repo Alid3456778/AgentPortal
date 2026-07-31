@@ -278,7 +278,7 @@
               const items = (o.items || [])
                 .map(
                   (i) =>
-                    `<div class="ip">• ${i.product_name} — ${i.quantity}×${i.mg} @ ₹${parseFloat(i.cost).toFixed(2)}</div>`,
+                    `<div class="ip">• ${i.product_name} — ${i.quantity}×${i.mg} @ $${parseFloat(i.cost).toFixed(2)}</div>`,
                 )
                 .join("");
               const total = (o.items || []).reduce(
@@ -294,7 +294,7 @@
 	              return `<tr>
         <td><strong style="font-size:12px">${o.order_id}</strong><br/><span style="font-size:11px;color:var(--muted)">${new Date(o.order_date).toLocaleDateString()}</span></td>
         <td>${o.first_name} ${o.last_name}<br/><span style="font-size:11px;color:var(--muted)">${o.phone}</span></td>
-        <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: ₹${total.toFixed(2)}</div></td>
+        <td>${items}<div style="font-size:12px;font-weight:600;margin-top:4px">Total: $${total.toFixed(2)}</div></td>
         <td style="font-size:12px">${o.lead_source}</td>
         <td><span class="bdg ${o.order_status}">${o.order_status}</span></td>
 	        <td>${trackingCell}</td>
